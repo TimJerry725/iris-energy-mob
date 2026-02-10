@@ -8,9 +8,6 @@ import {
     User,
     Sparkles,
     ChevronRight,
-    Plus,
-    Mic,
-    AudioLines,
     ArrowUp,
     ArrowDown,
     Wallet,
@@ -21,42 +18,46 @@ import {
     X,
     Sun,
     Moon,
-    TrendingUp
+    TrendingUp,
+    Send,
+    Mic,
+    AudioLines,
+    ShoppingBag,
+    TrendingDown,
+    LayoutGrid
 } from "lucide-react-native";
 import { IrisScreen } from "../../components/IrisScreen";
 import { IrisText } from "../../components/IrisText";
 import { IrisLogo } from "../../components/IrisLogo";
 import { useTheme } from "../../context/ThemeContext";
+import { simulateChatFlow, loadChatFlow } from "../../components/ChatFlowDemo";
 
 interface Message {
     id: string;
     text: string;
     sender: "user" | "assistant";
     timestamp: number;
+    options?: { label: string; action: string }[];
 }
 
-export default function ChatbotScreen() {
+const ChatbotScreen = () => {
     const router = useRouter();
     const { width } = useWindowDimensions();
     const SIDEBAR_WIDTH = width * 0.8;
     const { role } = useLocalSearchParams<{ role: string }>();
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const { theme, toggleTheme, colors } = useTheme();
     const [messages, setMessages] = useState<Message[]>([]);
     const [inputText, setInputText] = useState("");
     const scrollViewRef = useRef<ScrollView>(null);
     const fadeAnim = useRef(new Animated.Value(0)).current;
 
-    // Sidebar animation values
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-    // Add extra buffer (20px) to ensure shadows are hidden
-    const sidebarOffset = useRef(new Animated.Value(-(width * 0.8) - 20)).current;
+    const sidebarOffset = useRef(new Animated.Value(-SIDEBAR_WIDTH - 20)).current;
     const backdropOpacity = useRef(new Animated.Value(0)).current;
     const shadowOpacity = useRef(new Animated.Value(0)).current;
-    // Theme toggle animation
     const togglePosition = useRef(new Animated.Value(theme === "dark" ? 1 : 0)).current;
 
-    // Animate toggle when theme changes
     useEffect(() => {
         Animated.spring(togglePosition, {
             toValue: theme === "dark" ? 1 : 0,
@@ -77,9 +78,6 @@ export default function ChatbotScreen() {
                 damping: 20,
                 mass: 0.8,
                 stiffness: 100,
-                overshootClamping: false,
-                restDisplacementThreshold: 0.01,
-                restSpeedThreshold: 0.01,
             }),
             Animated.timing(backdropOpacity, {
                 toValue: nextState ? 0.6 : 0,
@@ -116,17 +114,47 @@ export default function ChatbotScreen() {
         setMessages((prev) => [...prev, userMessage]);
         setInputText("");
 
-        // Simulate AI response based on keywords
         setTimeout(() => {
-            let responseText = t("generic_response", "I understand. I'm helping you with your request.");
+            let responseText = "I'm processing your energy request. How can I help you take the next step?";
+            let responseOptions: { label: string; action: string }[] | undefined = undefined;
 
             const lowerText = messageText.toLowerCase();
-            if (lowerText.includes("sell")) {
-                responseText = t("sell_flow_init", "Great! I can help you sell your excess solar energy. How many units (kWh) would you like to list?");
-            } else if (lowerText.includes("buy")) {
-                responseText = t("buy_flow_init", "I'm looking for the best price for you. There are 3 sellers nearby offering energy at ₹4.5/unit. Interested?");
-            } else if (lowerText.includes("balance") || lowerText.includes("wallet")) {
-                responseText = t("balance_check", "Your current balance is ₹1,240. You have 45 units available for trade today.");
+
+            if (lowerText.includes("sell") || lowerText.includes("listing")) {
+                responseText = "I see you want to sell energy. You can list your excess solar units on the peer-to-peer marketplace. What's your target price?";
+                responseOptions = [
+                    { label: "List Energy", action: "List 5kWh for sale" },
+                    { label: "Market Prices", action: "Current market rates?" },
+                    { label: "Check Savings", action: "My total savings" }
+                ];
+            } else if (lowerText.includes("buy") || lowerText.includes("price") || lowerText.includes("rate")) {
+                responseText = "Current market rates are optimized for your location. You can buy clean energy from local prosumers starting at ₹6.5/unit. Interested?";
+                responseOptions = [
+                    { label: "Browse Units", action: "Show me available units" },
+                    { label: "Set Alerts", action: "Set a price alert" },
+                    { label: "Auto-Buy", action: "Enable Auto-Buy" }
+                ];
+            } else if (lowerText.includes("portfolio") || lowerText.includes("balance") || lowerText.includes("credit")) {
+                responseText = "Your Iris Portfolio is performing well. You have 12.5 Carbon Credits and a balance of ₹1,240. Any specific action?";
+                responseOptions = [
+                    { label: "Sell Credits", action: "Redeem Carbon Credits" },
+                    { label: "Wallet details", action: "Show full wallet" },
+                    { label: "Top Up", action: "Add funds" }
+                ];
+            } else if (lowerText.includes("smart") || lowerText.includes("trade") || lowerText.includes("automated")) {
+                responseText = "Smart Trading is Iris's AI optimization. It handles buying/selling based on your usage patterns. Shall we configure it?";
+                responseOptions = [
+                    { label: "Enable AI", action: "Start Smart Trading" },
+                    { label: "Trading Logs", action: "Show trading history" },
+                    { label: "Strategy", action: "Change strategy" }
+                ];
+            } else {
+                responseText = "Welcome to Iris Energy. I'm your AI assistant for the P2P energy market. You can ask me to sell units, check prices, or view your carbon credits.";
+                responseOptions = [
+                    { label: "Buy Energy", action: "Buy Energy" },
+                    { label: "Sell Energy", action: "Sell Energy" },
+                    { label: "Smart Trade", action: "Smart Trade" }
+                ];
             }
 
             const assistantMessage: Message = {
@@ -134,9 +162,10 @@ export default function ChatbotScreen() {
                 text: responseText,
                 sender: "assistant",
                 timestamp: Date.now(),
+                options: responseOptions
             };
             setMessages((prev) => [...prev, assistantMessage]);
-        }, 1000);
+        }, 800);
     };
 
     const QuickAction = ({ title, icon: Icon, color }: { title: string; icon: any; color: string }) => (
@@ -153,169 +182,118 @@ export default function ChatbotScreen() {
     return (
         <IrisScreen scrollable={false}>
             <KeyboardAvoidingView
-                behavior={Platform.OS === "ios" ? "padding" : "height"}
-                style={{ backgroundColor: colors.background }}
-                className="flex-1"
-                keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
+                behavior={Platform.OS === "ios" ? "padding" : undefined}
+                style={{ flex: 1, backgroundColor: colors.background }}
+                keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
             >
-                {/* GPT Style Header */}
-                <View className="py-2 flex-row items-center justify-between">
-                    <View className="flex-row items-center">
-                        <TouchableOpacity onPress={toggleSidebar} className="mr-4">
-                            <Menu size={24} color={colors.foreground} />
-                        </TouchableOpacity>
-                        <TouchableOpacity className="flex-row items-center">
+                <View className="flex-1">
+                    {/* Header */}
+                    <View className="py-2 flex-row items-center justify-between">
+                        <View className="flex-row items-center">
+                            <TouchableOpacity onPress={toggleSidebar} className="mr-4">
+                                <Menu size={24} color={colors.foreground} />
+                            </TouchableOpacity>
                             <IrisLogo width={120} height={40} />
-                            <ChevronRight size={16} color={colors.muted} />
-                        </TouchableOpacity>
-                    </View>
-
-                    <View className="flex-row items-center">
+                        </View>
                         <TouchableOpacity onPress={() => router.push("/chatbot/settings")}>
                             <User size={24} color={colors.foreground} />
                         </TouchableOpacity>
                     </View>
-                </View>
 
-                <ScrollView
-                    ref={scrollViewRef}
-                    className="flex-1 pt-4"
-                    showsVerticalScrollIndicator={false}
-                    onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
-                    contentContainerStyle={messages.length === 0 ? { flexGrow: 1, justifyContent: "center" } : {}}
-                >
-                    {messages.length === 0 ? (
-                        <Animated.View style={{ opacity: fadeAnim }} className="items-center px-6">
-                            <View className="w-24 h-24 rounded-full overflow-hidden mb-6 border-4 border-primary/20 bg-primary/10 items-center justify-center">
-                                <Image
-                                    source={require("../../assets/iris_avatar.png")}
-                                    className="w-full h-full"
-                                    resizeMode="cover"
-                                />
-                            </View>
-                            <TouchableOpacity onPress={() => handleSend("Tell me about energy trading")} className="flex-row items-center mb-2">
-                                <IrisText variant="h2" align="center" className="text-2xl font-bold mb-0 mr-2">Trade smarter with Iris Energy</IrisText>
-                                <ChevronRight size={20} color={colors.muted} />
-                            </TouchableOpacity>
-                            <IrisText variant="muted" align="center" className="text-lg text-gray-500 mb-12">
-                                Ask about unit prices, sell your energy, or check your savings in seconds.
-                            </IrisText>
-
-                            <View className="w-full">
-                                <IrisText variant="muted" className="mb-4 text-xs uppercase tracking-widest">
-                                    {role ? `${role.charAt(0).toUpperCase() + role.slice(1)} Actions` : "Quick Actions"}
-                                </IrisText>
-                                <View className="flex-row flex-wrap justify-between">
-                                    {(!role || role === "prosumer") && (
-                                        <>
-                                            <QuickAction title={t("smart_trade", "Smart Trade")} icon={Sparkles} color="#A855F7" />
-                                            <QuickAction title={t("buy_energy", "Buy Energy")} icon={ArrowDown} color="#00E673" />
-                                            <QuickAction title={t("sell_energy", "Sell Energy")} icon={ArrowUp} color="#00FF7F" />
-                                            <QuickAction title={t("portfolio", "Portfolio")} icon={Wallet} color="#6366F1" />
-                                        </>
-                                    )}
-                                    {role === "buyer" && (
-                                        <>
-                                            <QuickAction title={t("buy_energy", "Buy Energy")} icon={ArrowDown} color="#00E673" />
-                                            <QuickAction title={t("my_balance", "My Balance")} icon={Wallet} color="#6366F1" />
-                                            <QuickAction title={t("market_trends", "Market Trends")} icon={TrendingUp} color="#3EBAF4" />
-                                            <QuickAction title={t("get_help", "Get Help")} icon={HelpCircle} color="#FACC15" />
-                                        </>
-                                    )}
-                                    {role === "seller" && (
-                                        <>
-                                            <QuickAction title={t("sell_energy", "Sell Energy")} icon={ArrowUp} color="#00FF7F" />
-                                            <QuickAction title={t("earnings", "Earnings")} icon={Wallet} color="#6366F1" />
-                                            <QuickAction title={t("grid_demand", "Grid Demand")} icon={TrendingUp} color="#3EBAF4" />
-                                            <QuickAction title={t("get_help", "Get Help")} icon={HelpCircle} color="#FACC15" />
-                                        </>
-                                    )}
-                                </View>
-                            </View>
-                        </Animated.View>
-                    ) : (
-                        messages.map((msg) => (
-                            <View
-                                key={msg.id}
-                                className={`mb-6 flex-row ${msg.sender === "user" ? "justify-end" : "justify-start"}`}
-                            >
-                                <View
-                                    style={{
-                                        backgroundColor: msg.sender === "user" ? (theme === "dark" ? "#262626" : "#E2E8F0") : "transparent",
-                                        maxWidth: "85%",
-                                        borderRadius: 20,
-                                        padding: 16,
-                                    }}
-                                >
-                                    <IrisText
-                                        style={{ color: colors.foreground }}
-                                        className={msg.sender === "assistant" ? "text-xl leading-relaxed" : "text-lg"}
-                                    >
-                                        {msg.text}
-                                    </IrisText>
-                                </View>
-                            </View>
-                        ))
-                    )}
-                </ScrollView>
-
-                {/* GPT Style Input Bar */}
-                <View style={{ backgroundColor: colors.background }} className="pb-6 pt-2 flex-row items-center space-x-5">
-                    <View
-                        style={{ backgroundColor: colors.card, borderColor: colors.muted + "20" }}
-                        className="flex-1 flex-row items-center rounded-full px-5 py-3 border"
+                    {/* Chat Messages */}
+                    <ScrollView
+                        ref={scrollViewRef}
+                        className="flex-1"
+                        showsVerticalScrollIndicator={false}
+                        onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
+                        contentContainerStyle={messages.length === 0 ? { flexGrow: 1, justifyContent: "center" } : { paddingVertical: 20 }}
                     >
-                        <TextInput
-                            style={{ color: colors.foreground }}
-                            className="flex-1 text-lg font-medium font-medium"
-                            placeholder={t("ask_anything", "Ask anything")}
-                            placeholderTextColor={colors.muted}
-                            value={inputText}
-                            onChangeText={setInputText}
-                            onSubmitEditing={() => handleSend()}
-                        />
-                        <TouchableOpacity className="ml-2">
-                            <Mic size={20} color={colors.muted} />
+                        {messages.length === 0 ? (
+                            <Animated.View style={{ opacity: fadeAnim }} className="items-center">
+                                <IrisText variant="h2" align="center" className="text-2xl font-bold mb-8">How can I help you Today?</IrisText>
+                                <View className="w-full flex-row flex-wrap justify-between">
+                                    <QuickAction title="Buy Energy" icon={ArrowDown} color="#00E673" />
+                                    <QuickAction title="Sell Energy" icon={ArrowUp} color="#00FF7F" />
+                                    <QuickAction title="Smart Trade" icon={Sparkles} color="#A855F7" />
+                                    <QuickAction title="Marketplace" icon={LayoutGrid} color="#6366F1" />
+                                </View>
+                            </Animated.View>
+                        ) : (
+                            messages.map((msg) => (
+                                <View key={msg.id} className={`mb-4 ${msg.sender === "user" ? "items-end" : "items-start"}`}>
+                                    <View
+                                        style={{
+                                            backgroundColor: msg.sender === "user" ? (theme === "dark" ? "#262626" : "#E5E7EB") : colors.card,
+                                            padding: 16,
+                                            borderRadius: 20,
+                                            borderBottomRightRadius: msg.sender === "user" ? 4 : 20,
+                                            borderTopLeftRadius: msg.sender === "assistant" ? 4 : 20,
+                                            maxWidth: "80%"
+                                        }}
+                                    >
+                                        <IrisText style={{ color: msg.sender === "user" ? "white" : colors.foreground }}>{msg.text}</IrisText>
+                                        {msg.options && (
+                                            <View className="mt-4 border-t border-gray-500/10 pt-4 space-y-2">
+                                                {msg.options.map((opt, i) => (
+                                                    <TouchableOpacity
+                                                        key={i}
+                                                        onPress={() => handleSend(opt.action)}
+                                                        className="py-3 px-4 rounded-xl flex-row items-center justify-between"
+                                                        style={{ backgroundColor: theme === "dark" ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)" }}
+                                                    >
+                                                        <IrisText style={{ color: colors.primary, fontWeight: "600" }}>{opt.label}</IrisText>
+                                                        <ChevronRight size={14} color={colors.primary} />
+                                                    </TouchableOpacity>
+                                                ))}
+                                            </View>
+                                        )}
+                                    </View>
+                                </View>
+                            ))
+                        )}
+                    </ScrollView>
+
+                    {/* Input Area */}
+                    <View className="py-4 flex-row items-center border-t border-gray-500/10">
+                        <View className="flex-1 flex-row items-center bg-gray-500/10 rounded-full px-4 py-2">
+                            <TextInput
+                                className="flex-1 h-10 text-lg"
+                                style={{ color: colors.foreground }}
+                                placeholder="Ask anything..."
+                                placeholderTextColor={colors.muted}
+                                value={inputText}
+                                onChangeText={setInputText}
+                                onSubmitEditing={() => handleSend()}
+                            />
+                            <TouchableOpacity onPress={() => handleSend()} className="ml-2">
+                                <Send size={24} color={colors.primary} />
+                            </TouchableOpacity>
+                        </View>
+                        <TouchableOpacity className="ml-4 w-12 h-12 rounded-full items-center justify-center bg-gray-500/10">
+                            <AudioLines size={24} color={colors.primary} />
                         </TouchableOpacity>
                     </View>
-
-                    <TouchableOpacity
-                        style={{ backgroundColor: colors.foreground }}
-                        className="w-12 h-12 rounded-full items-center justify-center"
-                        onPress={() => handleSend()}
-                    >
-                        <AudioLines size={24} color={colors.background} />
-                    </TouchableOpacity>
                 </View>
 
-                {/* Sidebar Overlay - Always rendered for proper touch handling */}
+                {/* Sidebar Overlay */}
                 <Animated.View
                     pointerEvents={isSidebarOpen ? "auto" : "none"}
-                    style={{
-                        position: "absolute",
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        backgroundColor: "black",
-                        opacity: backdropOpacity,
-                        zIndex: 90
-                    }}
+                    className="absolute inset-0 bg-black"
+                    style={{ opacity: backdropOpacity, zIndex: 100 }}
                 >
-                    <TouchableOpacity className="flex-1" onPress={toggleSidebar} activeOpacity={1} />
+                    <TouchableOpacity className="flex-1" onPress={toggleSidebar} />
                 </Animated.View>
 
-                {/* Sidebar Content */}
+                {/* Sidebar Menu */}
                 <Animated.View
-                    pointerEvents={isSidebarOpen ? "auto" : "none"}
                     style={{
                         position: "absolute",
                         top: 0,
-                        left: 0,
                         bottom: 0,
+                        left: 0,
                         width: SIDEBAR_WIDTH,
                         backgroundColor: colors.background,
-                        zIndex: 100,
+                        zIndex: 101,
                         transform: [{ translateX: sidebarOffset }],
                         shadowColor: "#000",
                         shadowOffset: { width: 4, height: 0 },
@@ -324,7 +302,6 @@ export default function ChatbotScreen() {
                         elevation: isSidebarOpen ? 16 : 0,
                     }}
                 >
-                    {/* Header */}
                     <View
                         className="px-6 flex-row items-center justify-between mb-6"
                         style={{ paddingTop: Platform.OS === "ios" ? 60 : 40 }}
@@ -339,7 +316,6 @@ export default function ChatbotScreen() {
                         </TouchableOpacity>
                     </View>
 
-                    {/* Scrollable Content */}
                     <ScrollView
                         className="flex-1 px-6"
                         showsVerticalScrollIndicator={false}
@@ -347,24 +323,27 @@ export default function ChatbotScreen() {
                         <TouchableOpacity
                             onPress={() => { setMessages([]); toggleSidebar(); }}
                             className="flex-row items-center p-4 rounded-2xl mb-4"
-                            style={{ backgroundColor: colors.primary + "15" }}
+                            style={{ backgroundColor: colors.card }}
                         >
-                            <MessageSquarePlus size={20} color={colors.primary} className="mr-3" />
-                            <IrisText className="font-semibold text-primary">New Chat</IrisText>
+                            <View className="w-10 h-10 rounded-full items-center justify-center bg-gray-500/10 mr-3">
+                                <MessageSquarePlus size={20} color={colors.primary} />
+                            </View>
+                            <IrisText className="font-semibold" style={{ color: colors.foreground }}>New Chat</IrisText>
                         </TouchableOpacity>
 
-                        {/* Theme Switcher */}
                         <TouchableOpacity
                             onPress={toggleTheme}
                             className="flex-row items-center justify-between p-4 rounded-2xl mb-6"
                             style={{ backgroundColor: colors.card }}
                         >
                             <View className="flex-row items-center">
-                                {theme === "dark" ? (
-                                    <Moon size={20} color={colors.primary} className="mr-3" />
-                                ) : (
-                                    <Sun size={20} color={colors.primary} className="mr-3" />
-                                )}
+                                <View className="w-10 h-10 rounded-full items-center justify-center bg-gray-500/10 mr-3">
+                                    {theme === "dark" ? (
+                                        <Moon size={20} color={colors.primary} />
+                                    ) : (
+                                        <Sun size={20} color={colors.primary} />
+                                    )}
+                                </View>
                                 <IrisText className="font-semibold">
                                     {theme === "dark" ? "Dark Mode" : "Light Mode"}
                                 </IrisText>
@@ -389,33 +368,68 @@ export default function ChatbotScreen() {
                             </View>
                         </TouchableOpacity>
 
-                        <IrisText variant="muted" className="mb-4 text-xs uppercase tracking-widest">Recent Trades</IrisText>
+                        <IrisText variant="muted" className="mb-4 text-xs uppercase tracking-widest">Core Services</IrisText>
+
+                        <TouchableOpacity
+                            onPress={() => { toggleSidebar(); router.push("/chatbot/marketplace" as any); }}
+                            className="flex-row items-center p-4 rounded-2xl mb-3"
+                            style={{ backgroundColor: colors.card }}
+                        >
+                            <View className="w-10 h-10 rounded-full items-center justify-center bg-[#A855F7]/10 mr-3">
+                                <LayoutGrid size={20} color="#A855F7" />
+                            </View>
+                            <IrisText className="font-semibold">Energy Marketplace</IrisText>
+                        </TouchableOpacity>
+
+                        <View className="flex-row justify-between mb-6">
+                            <TouchableOpacity
+                                onPress={() => { toggleSidebar(); handleSend("Buy Energy"); }}
+                                className="flex-1 flex-row items-center p-4 rounded-2xl mr-2"
+                                style={{ backgroundColor: colors.card }}
+                            >
+                                <TrendingUp size={18} color="#00E673" className="mr-2" />
+                                <IrisText className="font-semibold">Buy</IrisText>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                onPress={() => { toggleSidebar(); handleSend("Sell Energy"); }}
+                                className="flex-1 flex-row items-center p-4 rounded-2xl ml-2"
+                                style={{ backgroundColor: colors.card }}
+                            >
+                                <TrendingDown size={18} color="#FF3B30" className="mr-2" />
+                                <IrisText className="font-semibold">Sell</IrisText>
+                            </TouchableOpacity>
+                        </View>
+
+                        <IrisText variant="muted" className="mb-4 text-xs uppercase tracking-widest">Recent Chats</IrisText>
 
                         {[
-                            { id: 1, title: "Sold 10 kWh to Block A", date: "Today" },
-                            { id: 2, title: "Bought 5 kWh from SolarPark", date: "Yesterday" },
-                            { id: 3, title: "Balance Top-up ₹500", date: "2 days ago" },
+                            { id: 1, title: "Selling Energy", date: "Today", scenario: "sell_solar_energy" },
+                            { id: 2, title: "Buying Energy", date: "Yesterday", scenario: "buy_autorickshaw_charging" },
+                            { id: 3, title: "Energy Delivery", date: "2 days ago", scenario: "delivery_reminders" },
                         ].map((item) => (
                             <TouchableOpacity
                                 key={item.id}
+                                onPress={() => {
+                                    toggleSidebar();
+                                    loadChatFlow(item.scenario, i18n.language || 'en', setMessages);
+                                }}
                                 className="flex-row items-center p-3 rounded-2xl mb-3"
                                 style={{ backgroundColor: colors.card }}
                             >
                                 <View
-                                    className="w-10 h-10 rounded-xl items-center justify-center mr-4"
+                                    className="w-10 h-10 rounded-full items-center justify-center mr-4"
                                     style={{ backgroundColor: colors.primary + "15" }}
                                 >
                                     <History size={18} color={colors.primary} />
                                 </View>
-                                <View>
-                                    <IrisText className="text-sm font-medium">{item.title}</IrisText>
+                                <View className="flex-1">
+                                    <IrisText className="text-sm font-medium" numberOfLines={1}>{item.title}</IrisText>
                                     <IrisText variant="muted" className="text-xs">{item.date}</IrisText>
                                 </View>
                             </TouchableOpacity>
                         ))}
                     </ScrollView>
 
-                    {/* Profile Footer */}
                     <View className="px-6 py-6 border-t" style={{ borderColor: colors.muted + "10" }}>
                         <View className="flex-row items-center justify-between">
                             <View className="flex-row items-center">
@@ -434,7 +448,7 @@ export default function ChatbotScreen() {
                                     <IrisText variant="muted" className="text-xs">Platinum Trader</IrisText>
                                 </View>
                             </View>
-                            <TouchableOpacity>
+                            <TouchableOpacity className="w-10 h-10 rounded-full items-center justify-center bg-gray-500/10">
                                 <LogOut size={20} color={colors.muted} />
                             </TouchableOpacity>
                         </View>
@@ -443,4 +457,6 @@ export default function ChatbotScreen() {
             </KeyboardAvoidingView>
         </IrisScreen>
     );
-}
+};
+
+export default ChatbotScreen;

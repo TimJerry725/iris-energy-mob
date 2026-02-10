@@ -30,14 +30,14 @@ export const IrisScreen: React.FC<IrisScreenProps> = ({ children, scrollable = t
             />
             {scrollable ? (
                 <ScrollView
-                    contentContainerStyle={{ flexGrow: 1, padding: 24 }}
+                    contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 12, paddingVertical: 24 }}
                     showsVerticalScrollIndicator={false}
                     keyboardShouldPersistTaps="handled"
                 >
                     {children}
                 </ScrollView>
             ) : (
-                <View className="flex-1 p-6">{children}</View>
+                <View className="flex-1 px-3 py-6">{children}</View>
             )}
         </View>
     );

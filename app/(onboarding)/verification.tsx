@@ -7,7 +7,7 @@ import { IrisText } from "../../components/IrisText";
 import { IrisButton } from "../../components/IrisButton";
 import { useTheme } from "../../context/ThemeContext";
 import { IrisLogo } from "../../components/IrisLogo";
-import { ShieldCheck, Loader2, FileText, UploadCloud, CheckCircle2, X, ArrowLeft, Languages, ExternalLink, Zap } from "lucide-react-native";
+import { ShieldCheck, Loader2, FileText, UploadCloud, CheckCircle2, X, ArrowLeft, Languages, ExternalLink, Zap, ChevronRight, Sparkles } from "lucide-react-native";
 import * as WebBrowser from 'expo-web-browser';
 
 interface ElectricityProvider {
@@ -62,13 +62,17 @@ export default function VerificationScreen() {
     const sheetAnim = useRef(new Animated.Value(height)).current;
     const overlayAnim = useRef(new Animated.Value(0)).current;
 
+    const [detectedRole, setDetectedRole] = useState<string | null>(null);
+
     const docMap: Record<string, string[]> = {
         buyer: ["Utility Customer VC", "Consumer VC"],
         seller: ["Utility Customer VC", "Seller VC"],
-        prosumer: ["Utility Customer VC", "Buyer VC", "Seller VC"]
+        prosumer: ["Utility Customer VC", "Consumer VC", "Seller VC"]
     };
 
-    const requiredDocs = docMap[type || "buyer"] || docMap.buyer;
+    // When no type is provided, we show all possible VCs for discovery
+    const allPossibleDocs = ["Utility Customer VC", "Consumer VC", "Seller VC"];
+    const requiredDocs = type ? (docMap[type] || docMap.buyer) : allPossibleDocs;
 
     useEffect(() => {
         Animated.loop(
@@ -80,9 +84,9 @@ export default function VerificationScreen() {
         ).start();
     }, []);
 
-    const openVCSheet = () => {
+    const openVCSheet = (initialProviders: boolean = false) => {
         setShowVCSheet(true);
-        setShowProviders(false); // Reset providers view
+        setShowProviders(initialProviders);
         Animated.parallel([
             Animated.spring(sheetAnim, {
                 toValue: 0,
@@ -134,15 +138,27 @@ export default function VerificationScreen() {
 
     const handleUpload = (doc: string) => {
         if (!uploadedDocs.includes(doc)) {
-            setUploadedDocs([...uploadedDocs, doc]);
+            const newDocs = [...uploadedDocs, doc];
+            setUploadedDocs(newDocs);
+
+            // Detect role based on uploaded docs
+            const hasConsumer = newDocs.includes("Consumer VC");
+            const hasSeller = newDocs.includes("Seller VC");
+
+            if (hasConsumer && hasSeller) setDetectedRole("prosumer");
+            else if (hasSeller) setDetectedRole("seller");
+            else if (hasConsumer) setDetectedRole("buyer");
         }
     };
 
     const handleContinue = () => {
-        // Navigate to chatbot/dashboard
+        const finalRole = detectedRole || type || "buyer";
         closeVCSheet();
         setTimeout(() => {
-            router.push("/chatbot");
+            router.replace({
+                pathname: "/chatbot",
+                params: { role: finalRole }
+            });
         }, 300);
     };
 
@@ -152,6 +168,26 @@ export default function VerificationScreen() {
     });
 
     const allUploaded = uploadedDocs.length === requiredDocs.length;
+
+    const OptionButton = ({ title, subtitle, icon: Icon, onPress }: any) => (
+        <TouchableOpacity
+            onPress={onPress}
+            style={{
+                backgroundColor: colors.card,
+                borderColor: colors.muted + "20"
+            }}
+            className="p-5 rounded-[28px] border mb-4 flex-row items-center"
+        >
+            <View className="w-12 h-12 bg-primary/10 rounded-2xl items-center justify-center mr-4">
+                <Icon size={24} color={colors.primary} />
+            </View>
+            <View className="flex-1">
+                <IrisText variant="h3" className="mb-0 text-base mr-2">{title}</IrisText>
+                <IrisText variant="muted" className="text-xs">{subtitle}</IrisText>
+            </View>
+            <ChevronRight size={20} color={colors.primary} opacity={0.5} />
+        </TouchableOpacity>
+    );
 
     return (
         <>
@@ -175,39 +211,59 @@ export default function VerificationScreen() {
                     </TouchableOpacity>
                 </View>
 
-                <View className="flex-1 items-center justify-center px-10">
-                    <View className="mb-10 relative items-center justify-center">
-                        <Animated.View style={{ transform: [{ rotate: spin }] }}>
-                            <Loader2 size={120} color={colors.primary} strokeWidth={1} />
-                        </Animated.View>
-                        <View className="absolute">
-                            <ShieldCheck size={60} color={colors.primary} />
-                        </View>
-                    </View>
+                <View className="mb-10">
+                    <IrisText variant="h1">Verify your identity</IrisText>
+                    <IrisText variant="muted">Choose how you want to provide your Verifiable Credentials.</IrisText>
+                </View>
 
-                    <IrisText variant="h1" align="center">Verification in progress</IrisText>
-                    <IrisText variant="muted" align="center" className="text-lg mt-2">
-                        Our team is verifying your details. This usually takes less than 24 hours.
-                    </IrisText>
+                <View className="flex-1 space-y-4">
+                    <OptionButton
+                        title="I already have VCs"
+                        subtitle="Upload your existing credentials from your wallet"
+                        icon={FileText}
+                        onPress={() => openVCSheet(false)}
+                    />
 
-                    <View className="w-full mt-10 space-y-4">
-                        <View className="flex-row items-center bg-gray-500/10 p-4 rounded-2xl mb-4">
-                            <View className="w-2 h-2 rounded-full bg-green-500 mr-3" />
-                            <IrisText className="text-sm">Phone Number Verified</IrisText>
+                    <OptionButton
+                        title="Get VCs from Provider"
+                        subtitle="Apply for new credentials from electricity providers"
+                        icon={Zap}
+                        onPress={() => openVCSheet(true)}
+                    />
+
+                    {uploadedDocs.length > 0 && (
+                        <View className="mt-8">
+                            <IrisText variant="muted" className="mb-4 text-xs uppercase tracking-widest">Verification Status</IrisText>
+                            <View className="flex-row items-center bg-gray-500/10 p-4 rounded-2xl mb-4">
+                                <View className="w-2 h-2 rounded-full bg-green-500 mr-3" />
+                                <IrisText className="text-sm">Phone Number Verified</IrisText>
+                            </View>
+                            <View className="flex-row items-center bg-gray-500/10 p-4 rounded-2xl mb-4">
+                                <View className={`w-2 h-2 rounded-full ${allUploaded ? "bg-green-500" : "bg-yellow-500"} mr-3`} />
+                                <IrisText className="text-sm">Credentials {uploadedDocs.length} of {requiredDocs.length} uploaded</IrisText>
+                            </View>
                         </View>
-                        <View className="flex-row items-center bg-gray-500/10 p-4 rounded-2xl mb-4">
-                            <View className={`w-2 h-2 rounded-full ${allUploaded ? "bg-green-500" : "bg-yellow-500"} mr-3`} />
-                            <IrisText className="text-sm">Credentials {allUploaded ? "Provided" : "Required"}</IrisText>
-                        </View>
-                    </View>
+                    )}
                 </View>
 
                 <View className="pb-10">
+                    {detectedRole && (
+                        <View
+                            className="mb-6 p-4 rounded-2xl flex-row items-center justify-center border border-primary/20"
+                            style={{ backgroundColor: colors.primary + "10" }}
+                        >
+                            <Sparkles size={20} color={colors.primary} className="mr-2" />
+                            <IrisText className="font-bold text-primary">
+                                DETECTED ROLE: {detectedRole.toUpperCase()}
+                            </IrisText>
+                        </View>
+                    )}
                     <IrisButton
                         variant="primary"
                         size="lg"
-                        label="Complete Setup"
-                        onPress={openVCSheet}
+                        label={allUploaded || detectedRole ? "Complete Setup" : "Continue"}
+                        onPress={allUploaded || detectedRole ? handleContinue : () => openVCSheet(false)}
+                        disabled={uploadedDocs.length === 0 && !detectedRole}
                     />
                 </View>
             </IrisScreen>

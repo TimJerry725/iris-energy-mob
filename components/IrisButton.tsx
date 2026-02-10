@@ -54,7 +54,7 @@ export const IrisButton: React.FC<IrisButtonProps> = ({
                     className="mr-3"
                 />
             )}
-            <Text className={`text-xl text-center font-bold font-bold ${getTextStyles()}`}>{label}</Text>
+            <Text className={`text-xl text-center font-bold ${getTextStyles()}`}>{label}</Text>
         </TouchableOpacity>
     );
 };

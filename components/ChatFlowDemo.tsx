@@ -125,3 +125,29 @@ export async function simulateChatFlow(
         setMessages(prev => [...prev, message]);
     }
 }
+
+/**
+ * Loads a complete chat flow instantly into the chatbot
+ */
+export function loadChatFlow(
+    flowId: string,
+    language: string,
+    setMessages: React.Dispatch<React.SetStateAction<any[]>>
+) {
+    const flows = chatFlows[language] || chatFlows['en'];
+    const flow = flows.find(f => f.id === flowId);
+
+    if (!flow) {
+        console.error(`Flow ${flowId} not found for language ${language}`);
+        return;
+    }
+
+    const messages = flow.messages.map((m, i) => ({
+        id: (Date.now() + i).toString(),
+        text: m.text,
+        sender: m.sender,
+        timestamp: Date.now(),
+    }));
+
+    setMessages(messages);
+}

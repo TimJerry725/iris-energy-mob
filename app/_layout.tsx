@@ -28,8 +28,9 @@ function RootLayout() {
                 <View className="flex-1 bg-white dark:bg-black">
                     <Stack screenOptions={{ headerShown: false }}>
                         <Stack.Screen name="index" />
-                        <Stack.Screen name="chatbot" />
-                        <Stack.Screen name="(tabs)" />
+                        <Stack.Screen name="chatbot/index" />
+                        <Stack.Screen name="chatbot/settings" />
+                        <Stack.Screen name="chatbot/marketplace" />
                         <Stack.Screen name="(onboarding)" />
                     </Stack>
                 </View>

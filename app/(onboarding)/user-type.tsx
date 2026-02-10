@@ -7,7 +7,7 @@ import { IrisText } from "../../components/IrisText";
 import { IrisButton } from "../../components/IrisButton";
 import { useTheme } from "../../context/ThemeContext";
 import { IrisLogo } from "../../components/IrisLogo";
-import { ShoppingCart, Zap, TrendingUp, CheckCircle2, ArrowLeft, Languages, FileText, UploadCloud, CheckCircle2 as CheckCircle, X, ExternalLink, Zap as ZapIcon } from "lucide-react-native";
+import { ShoppingCart, Zap, TrendingUp, CheckCircle2, ArrowLeft, Languages, FileText, UploadCloud, CheckCircle2 as CheckCircle, X, ExternalLink, Zap as ZapIcon, ShieldCheck, ChevronRight, Sparkles } from "lucide-react-native";
 import * as WebBrowser from 'expo-web-browser';
 
 interface ElectricityProvider {
@@ -54,7 +54,7 @@ export default function UserTypeScreen() {
 
     const [selectedType, setSelectedType] = useState<string | null>(null);
     const [showVCSheet, setShowVCSheet] = useState(false);
-    const [showProviders, setShowProviders] = useState(false);
+    const [sheetView, setSheetView] = useState<'initial' | 'already_have' | 'upload' | 'providers'>('initial');
     const [selectedProvider, setSelectedProvider] = useState<ElectricityProvider | null>(null);
     const [uploadedDocs, setUploadedDocs] = useState<string[]>([]);
 
@@ -97,7 +97,7 @@ export default function UserTypeScreen() {
         if (!selectedType) return;
 
         setShowVCSheet(true);
-        setShowProviders(false);
+        setSheetView('initial');
         Animated.parallel([
             Animated.spring(sheetAnim, {
                 toValue: 0,
@@ -128,12 +128,12 @@ export default function UserTypeScreen() {
             })
         ]).start(() => {
             setShowVCSheet(false);
-            setShowProviders(false);
+            setSheetView('initial');
         });
     };
 
     const handleDontHaveVC = () => {
-        setShowProviders(true);
+        setSheetView('providers');
     };
 
     const handleProviderSelect = async (provider: ElectricityProvider) => {
@@ -153,15 +153,45 @@ export default function UserTypeScreen() {
 
     const handleContinue = () => {
         closeVCSheet();
+        // Use router.replace to prevent users from going back to verification screens
+        // and ensure we transition smoothly to the chatbot
         setTimeout(() => {
-            router.push({
+            router.replace({
                 pathname: "/chatbot",
-                params: { role: selectedType }
+                params: { role: selectedType || "prosumer" }
             });
         }, 300);
     };
 
     const allUploaded = uploadedDocs.length === requiredDocs.length;
+
+    const OptionButton = ({ title, subtitle, icon: Icon, onPress, disabled = false, comingSoon = false }: any) => (
+        <TouchableOpacity
+            onPress={onPress}
+            disabled={disabled || comingSoon}
+            style={{
+                backgroundColor: colors.card,
+                borderColor: colors.muted + "20"
+            }}
+            className={`p-5 rounded-[28px] border mb-4 flex-row items-center ${comingSoon ? 'opacity-60' : ''}`}
+        >
+            <View className="w-12 h-12 bg-primary/10 rounded-2xl items-center justify-center mr-4">
+                <Icon size={24} color={colors.primary} />
+            </View>
+            <View className="flex-1">
+                <View className="flex-row items-center">
+                    <IrisText variant="h3" className="mb-0 text-base mr-2">{title}</IrisText>
+                    {comingSoon && (
+                        <View className="bg-primary/20 px-2 py-0.5 rounded-full">
+                            <IrisText className="text-[10px] text-primary font-bold">SOON</IrisText>
+                        </View>
+                    )}
+                </View>
+                <IrisText variant="muted" className="text-xs">{subtitle}</IrisText>
+            </View>
+            {!comingSoon && <ChevronRight size={20} color={colors.primary} opacity={0.5} />}
+        </TouchableOpacity>
+    );
 
     return (
         <>
@@ -260,12 +290,14 @@ export default function UserTypeScreen() {
                         <View className="flex-row justify-between items-start mb-6">
                             <View className="flex-1">
                                 <IrisText variant="h2">
-                                    {showProviders ? "Choose Your Provider" : "Upload Credentials"}
+                                    {sheetView === 'initial' ? "Verification" :
+                                        sheetView === 'already_have' ? "Select Source" :
+                                            sheetView === 'providers' ? "Choose Provider" : "Upload Credentials"}
                                 </IrisText>
                                 <IrisText variant="muted">
-                                    {showProviders
-                                        ? "Select your electricity provider to get started"
-                                        : "Please provide your Verifiable Credentials (VCs)"}
+                                    {sheetView === 'initial' ? "How would you like to verify your status?" :
+                                        sheetView === 'already_have' ? "Choose where your Credentials are stored" :
+                                            sheetView === 'providers' ? "Select your electricity provider" : "Provide your Verifiable Credentials"}
                                 </IrisText>
                             </View>
                             <TouchableOpacity
@@ -277,9 +309,51 @@ export default function UserTypeScreen() {
                         </View>
 
                         <ScrollView showsVerticalScrollIndicator={false} className="mb-6">
-                            {!showProviders ? (
+                            {sheetView === 'initial' && (
+                                <View className="pt-2">
+                                    <OptionButton
+                                        title="I already have the VC"
+                                        subtitle="Use existing credentials from your wallet"
+                                        icon={CheckCircle2}
+                                        onPress={() => setSheetView('already_have')}
+                                    />
+                                    <OptionButton
+                                        title="Apply for the VC"
+                                        subtitle="Get credentials from your energy provider"
+                                        icon={Sparkles}
+                                        onPress={() => setSheetView('providers')}
+                                    />
+                                </View>
+                            )}
+
+                            {sheetView === 'already_have' && (
+                                <View className="pt-2">
+                                    <OptionButton
+                                        title="UEI"
+                                        subtitle="Unified Energy Interface"
+                                        icon={ShieldCheck}
+                                        comingSoon
+                                    />
+                                    <OptionButton
+                                        title="Digilocker"
+                                        subtitle="National Digital Locker System"
+                                        icon={CheckCircle2}
+                                        comingSoon
+                                    />
+                                    <OptionButton
+                                        title="Upload"
+                                        subtitle="Upload file from your local storage"
+                                        icon={UploadCloud}
+                                        onPress={() => setSheetView('upload')}
+                                    />
+                                    <TouchableOpacity onPress={() => setSheetView('initial')} className="items-center mt-4">
+                                        <IrisText className="text-primary text-base">← Back</IrisText>
+                                    </TouchableOpacity>
+                                </View>
+                            )}
+
+                            {sheetView === 'upload' && (
                                 <>
-                                    {/* VC Upload Section */}
                                     <View className="mb-6">
                                         {requiredDocs.map((doc, idx) => {
                                             const isUploaded = uploadedDocs.includes(doc);
@@ -289,7 +363,7 @@ export default function UserTypeScreen() {
                                                     style={{ backgroundColor: isUploaded ? colors.primary + "10" : "transparent" }}
                                                     className={`flex-row items-center p-5 rounded-3xl border border-dashed mb-4 ${isUploaded ? "border-primary" : "border-gray-500/30"}`}
                                                 >
-                                                    <View className="w-12 h-12 bg-gray-500/10 rounded-2xl items-center justify-center mr-4">
+                                                    <View className="w-12 h-12 bg-gray-500/10 rounded-2xl items-center justify-center mr-4" style={{ borderRadius: 16 }}>
                                                         <FileText size={24} color={isUploaded ? colors.primary : colors.muted} />
                                                     </View>
                                                     <View className="flex-1">
@@ -311,21 +385,15 @@ export default function UserTypeScreen() {
                                             );
                                         })}
                                     </View>
-
-                                    {/* Don't have VCs Link */}
-                                    <TouchableOpacity onPress={handleDontHaveVC} className="items-center mb-6">
-                                        <IrisText className="text-primary underline text-base">
-                                            Don't have VCs? Get them from your provider
-                                        </IrisText>
+                                    <TouchableOpacity onPress={() => setSheetView('already_have')} className="items-center mb-6">
+                                        <IrisText className="text-primary text-base">← Back</IrisText>
                                     </TouchableOpacity>
                                 </>
-                            ) : (
+                            )}
+
+                            {sheetView === 'providers' && (
                                 <>
-                                    {/* Electricity Providers */}
                                     <View className="mb-6">
-                                        <IrisText variant="muted" className="mb-4 text-sm">
-                                            Select your electricity provider to obtain VCs
-                                        </IrisText>
                                         {PROVIDERS.map((provider) => (
                                             <TouchableOpacity
                                                 key={provider.id}
@@ -359,12 +427,8 @@ export default function UserTypeScreen() {
                                             </TouchableOpacity>
                                         ))}
                                     </View>
-
-                                    {/* Back to VCs Link */}
-                                    <TouchableOpacity onPress={() => setShowProviders(false)} className="items-center mb-6">
-                                        <IrisText className="text-primary underline text-base">
-                                            ← Back to upload VCs
-                                        </IrisText>
+                                    <TouchableOpacity onPress={() => setSheetView('initial')} className="items-center mb-6">
+                                        <IrisText className="text-primary text-base">← Back</IrisText>
                                     </TouchableOpacity>
                                 </>
                             )}
@@ -375,6 +439,7 @@ export default function UserTypeScreen() {
                             size="lg"
                             label={allUploaded ? "Complete Verification" : "Continue"}
                             onPress={handleContinue}
+                            disabled={sheetView === 'upload' && !allUploaded}
                         />
                     </Animated.View>
                 </View>

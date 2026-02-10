@@ -4,11 +4,11 @@ module.exports = function (api) {
     presets: [
       ["babel-preset-expo", {
         jsxImportSource: "nativewind",
-        reanimated: false,
-        worklets: false,
       }],
       "nativewind/babel",
     ],
-    plugins: [],
+    plugins: [
+      "react-native-reanimated/plugin",
+    ],
   };
 };

@@ -18,7 +18,7 @@ export default function ProfileSetupScreen() {
 
     const handleContinue = () => {
         if (name.trim()) {
-            router.push("/(onboarding)/user-type");
+            router.push("/(onboarding)/verification");
         }
     };
 

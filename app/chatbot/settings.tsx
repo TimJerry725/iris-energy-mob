@@ -72,11 +72,16 @@ export default function SettingsScreen() {
                         style={{ backgroundColor: colors.card }}
                     >
                         <View className="flex-row items-center">
-                            {theme === "dark" ? (
-                                <Moon size={24} color={colors.primary} className="mr-3" />
-                            ) : (
-                                <Sun size={24} color={colors.primary} className="mr-3" />
-                            )}
+                            <View
+                                className="w-10 h-10 rounded-full items-center justify-center mr-3"
+                                style={{ backgroundColor: colors.primary + "20" }}
+                            >
+                                {theme === "dark" ? (
+                                    <Moon size={20} color={colors.primary} />
+                                ) : (
+                                    <Sun size={20} color={colors.primary} />
+                                )}
+                            </View>
                             <View>
                                 <IrisText variant="h3" className="mb-0">Theme</IrisText>
                                 <IrisText variant="muted" className="text-sm">

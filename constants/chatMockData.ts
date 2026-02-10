@@ -14,70 +14,54 @@ export const chatFlows: Record<string, ChatFlow[]> = {
             id: "sell_solar_energy",
             scenario: "Selling Solar Energy",
             messages: [
-                { sender: "user", text: "I want to sell electricity for tomorrow between 1 PM and 2 PM" },
-                { sender: "assistant", text: "Great! I can help you sell your excess solar energy. Do you know how many units you can sell, or would you like a recommendation?" },
-                { sender: "user", text: "You recommend" },
+                { sender: "user", text: "I want to sell electricity tomorrow between 1 PM and 2 PM." },
+                { sender: "assistant", text: "Do you know how many units you can sell, or would you like a recommendation?" },
+                { sender: "user", text: "You recommend." },
                 { sender: "assistant", text: "Is this solar power, like last time?" },
-                { sender: "user", text: "Yes" },
-                { sender: "assistant", text: "Based on your past history and weather forecast for tomorrow, you could offer between 6 kWh and 7 kWh for sale in 1 hour. How much would you like to sell?" },
-                { sender: "user", text: "6 units" },
-                { sender: "assistant", text: "How much would you like to price it at? Market average for tomorrow is likely to be ₹4 per kWh. If you sell for more than ₹4, you may not find buyers. If you sell for less than ₹4, you will get a buyer quickly." },
-                { sender: "user", text: "Sell at ₹4 for each kWh" },
-                { sender: "assistant", text: "Sale listing published in the marketplace for 6 kWh tomorrow (7 Feb) between 1 PM and 2 PM at ₹4/kWh.\n\nI will confirm the sale once a buyer shows interest with this price. If they negotiate on the price, I will come back to ask you.\n\nI can publish this offer every day by myself, if you agree. Would you like me to set this up daily?" },
-                { sender: "user", text: "Yes, set up daily sales with these details" },
-                { sender: "assistant", text: "Perfect! I've set up automatic daily listings for 6 kWh between 1 PM and 2 PM at ₹4/kWh. I'll notify you when buyers show interest." }
+                { sender: "user", text: "Yes." },
+                { sender: "assistant", text: "Based on your past history and tomorrow’s weather forecast, you can sell between 6 and 7 kWh in one hour. How much would you like to sell?" },
+                { sender: "user", text: "6 units." },
+                { sender: "assistant", text: "What price would you like to set?\nThe market average for tomorrow is ₹4 per kWh.\nHigher than ₹4 → slower buyers\nLower than ₹4 → faster buyers" },
+                { sender: "user", text: "Sell at ₹4 per kWh." },
+                { sender: "assistant", text: "Your listing is now live.\n6 kWh for tomorrow (7 Feb), 1 PM – 2 PM, at ₹4 per kWh." },
+                { sender: "assistant", text: "I’ll confirm the sale once a buyer shows interest.\nIf there’s any price negotiation, I’ll check with you first." },
+                { sender: "assistant", text: "Would you like me to publish this offer automatically every day?" },
+                { sender: "user", text: "Yes, set this up daily." }
             ]
         },
         {
             id: "buy_autorickshaw_charging",
-            scenario: "Buying Energy for Autorickshaw",
+            scenario: "Buying Energy",
             messages: [
-                { sender: "assistant", text: "Namaste. What can I do for you today?" },
-                { sender: "user", text: "I want to buy power for tomorrow from 1 PM to 2 PM" },
+                { sender: "user", text: "Namaste." },
+                { sender: "assistant", text: "Namaste. How can I help you today?" },
+                { sender: "user", text: "I want to buy power tomorrow from 1 PM to 2 PM." },
                 { sender: "assistant", text: "How many kWh do you need?" },
-                { sender: "user", text: "I don't know. I need to charge my autorickshaw" },
+                { sender: "user", text: "I’m not sure. I need to charge my autorickshaw." },
                 { sender: "assistant", text: "What is the company and model of your autorickshaw?" },
-                { sender: "user", text: "Mahindra Treo" },
-                { sender: "assistant", text: "Mahindra Treo has a 7.4 kWh battery. You may have some charge already. Shall I purchase 6 kWh?" },
-                { sender: "user", text: "Okay" },
-                { sender: "assistant", text: "Here are the top 3 offers matching your requirements:\n\n1. ₹4.0/kWh - Solar Park A (Rating: 4.8/5) - Savings: ₹15\n2. ₹4.2/kWh - Green Energy Co (Rating: 4.5/5) - Savings: ₹12\n3. ₹4.5/kWh - EcoSeller (Rating: 4.7/5) - Savings: ₹8\n\nThese are all good sellers with ratings above 4/5. Which deal would you like?" },
-                { sender: "user", text: "First one" },
-                { sender: "assistant", text: "Buying request placed for 6 kWh tomorrow (7 Feb) between 1 PM and 2 PM at ₹4/kWh. I will confirm once the seller has accepted your order." },
-                { sender: "assistant", text: "Order confirmed: 6 kWh purchased for ₹4/kWh (Total ₹24; savings of ₹12). Please ensure you use this power between 1 PM and 2 PM tomorrow (7 Feb)." }
-            ]
-        },
-        {
-            id: "buy_with_negotiation",
-            scenario: "Buying with Price Negotiation",
-            messages: [
-                { sender: "user", text: "I want to buy 6 kWh tomorrow between 1 PM and 2 PM" },
-                { sender: "assistant", text: "I found several sellers. What's your preferred price range?" },
-                { sender: "user", text: "Between ₹3.5 and ₹3.75 per kWh" },
-                { sender: "assistant", text: "Purchase request placed for 6 kWh at ₹3.5/kWh between 1 PM and 2 PM tomorrow (7 Feb)." },
-                { sender: "assistant", text: "The seller has rejected the purchase. I have now placed another purchase request for 6 kWh at ₹3.75/kWh between 1 PM and 2 PM tomorrow (7 Feb)." },
-                { sender: "assistant", text: "Order confirmed: 6 kWh purchased for ₹3.75/kWh (Total ₹22.5; savings of ₹13.5). Please ensure you use this power between 1 PM and 2 PM tomorrow (7 Feb)." }
-            ]
-        },
-        {
-            id: "check_balance",
-            scenario: "Checking Balance and History",
-            messages: [
-                { sender: "user", text: "What's my current balance?" },
-                { sender: "assistant", text: "Your current balance is ₹1,240. You have 45 units available for trade today.\n\nRecent transactions:\n• Sold 10 kWh - ₹40 (Today)\n• Bought 5 kWh - ₹20 (Yesterday)\n• Balance top-up - ₹500 (2 days ago)" },
-                { sender: "user", text: "Show me my savings this month" },
-                { sender: "assistant", text: "This month you've saved ₹450 through smart energy trading!\n\n📊 Breakdown:\n• Sold excess solar: ₹320\n• Bought at off-peak rates: ₹130\n\nYou're in the top 15% of traders in your area! 🎉" }
+                { sender: "user", text: "Mahindra Treo." },
+                { sender: "assistant", text: "Mahindra Treo has a 7.4 kWh battery.\nConsidering your existing charge, should I purchase 6 kWh?" },
+                { sender: "user", text: "Okay." },
+                { sender: "assistant", text: "Here are the best available offers for your time slot.\nAll sellers have ratings above 4/5.\nYou’ll also see your estimated savings on each option." },
+                { sender: "assistant", text: "Select the deal you like by tapping the button below it." },
+                { sender: "user", text: "(Selects first deal)" },
+                { sender: "assistant", text: "Purchase request placed.\n6 kWh, ₹4 per kWh, tomorrow (7 Feb), 1 PM – 2 PM.\nI’ll confirm once the seller accepts." },
+                { sender: "assistant", text: "Order confirmed.\nYou’ve purchased 6 kWh at ₹4 per kWh.\nTotal: ₹24\nSavings: ₹12\nPlease use the power between 1 PM and 2 PM." }
             ]
         },
         {
             id: "delivery_reminders",
-            scenario: "Delivery Notifications",
+            scenario: "Energy Delivery",
             messages: [
-                { sender: "assistant", text: "⏰ Reminder: You have sold 6 kWh to be delivered between 1 PM and 2 PM today. Please ensure you deliver this power in this time. Otherwise, you may face penalties." },
-                { sender: "assistant", text: "✅ Your time starts now - please ensure delivery of 6 kWh in the next 1 hour." },
-                { sender: "assistant", text: "🎉 Your energy sale duration has ended. Thank you for driving India's energy progress forward!" }
+                { sender: "assistant", text: "⏰ 11:00 AM – 2 hours before delivery\n\nAI to Seller:\nReminder:\nYou’ve sold 6 kWh to be delivered between 1 PM and 2 PM today.\nPlease ensure delivery during this time to avoid penalties." },
+                { sender: "assistant", text: "AI to Buyer:\nReminder:\nYou’ve purchased 6 kWh to be used between 1 PM and 2 PM today.\nPlease ensure usage during this time." },
+                { sender: "assistant", text: "⏰ 1:00 PM – Delivery start\n\nAI to Seller:\nDelivery window has started.\nPlease deliver 6 kWh within the next 1 hour." },
+                { sender: "assistant", text: "⏰ 2:00 PM – Delivery end\n\nAI to Seller:\nYour delivery window has ended.\nThank you for contributing to India’s energy progress." },
+                { sender: "assistant", text: "AI to Buyer:\nYour energy usage window has ended.\nHope you enjoyed the savings." }
             ]
         }
     ],
+
     hi: [
         {
             id: "sell_solar_energy",
