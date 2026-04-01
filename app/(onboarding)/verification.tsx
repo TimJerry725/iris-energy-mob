@@ -3,9 +3,8 @@ import { View, Animated, TouchableOpacity, useWindowDimensions, ScrollView, Acti
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { IrisScreen } from "../../components/IrisScreen";
 import { IrisText } from "../../components/IrisText";
-import { IrisButton } from "../../components/IrisButton";
 import { useTheme } from "../../context/ThemeContext";
-import { FileText, UploadCloud, CheckCircle2, X, ExternalLink, Zap, ChevronRight, Sparkles } from "../../components/AppIcons";
+import { FileText, UploadCloud, CheckCircle2, X, ExternalLink, Zap, ChevronRight } from "../../components/AppIcons";
 import * as WebBrowser from "expo-web-browser";
 
 type LoginRole = "buyer" | "seller";
@@ -87,13 +86,6 @@ const buildDummyVC = (type?: string): UploadedVC => {
     return dummyByType[type || "prosumer"] || dummyByType.prosumer;
 };
 
-const getDetectedRoleLabel = (role: DetectedRole) => {
-    if (role === "prosumer") return "Buyer + Seller access detected";
-    if (role === "seller") return "Seller access detected";
-    if (role === "buyer") return "Buyer access detected";
-    return "VC uploaded";
-};
-
 export default function VerificationScreen() {
     const router = useRouter();
     const { type } = useLocalSearchParams<{ type?: string }>();
@@ -103,8 +95,6 @@ export default function VerificationScreen() {
     const [showVCSheet, setShowVCSheet] = useState(false);
     const [showProviders, setShowProviders] = useState(false);
     const [selectedProvider, setSelectedProvider] = useState<ElectricityProvider | null>(null);
-    const [uploadedVC, setUploadedVC] = useState<UploadedVC | null>(null);
-    const [uploadError, setUploadError] = useState<string | null>(null);
     const [uploadState, setUploadState] = useState<"idle" | "loading" | "verified">("idle");
 
     const sheetAnim = useRef(new Animated.Value(height)).current;
@@ -113,7 +103,8 @@ export default function VerificationScreen() {
     const openVCSheet = (initialProviders: boolean = false) => {
         setShowVCSheet(true);
         setShowProviders(initialProviders);
-        setUploadError(null);
+        setSelectedProvider(null);
+        setUploadState("idle");
         Animated.parallel([
             Animated.spring(sheetAnim, {
                 toValue: 0,
@@ -145,6 +136,8 @@ export default function VerificationScreen() {
         ]).start(() => {
             setShowVCSheet(false);
             setShowProviders(false);
+            setSelectedProvider(null);
+            setUploadState("idle");
         });
     };
 
@@ -158,14 +151,14 @@ export default function VerificationScreen() {
     };
 
     const handleUploadFromDevice = async () => {
-        setUploadError(null);
+        if (uploadState !== "idle") return;
+
         setShowProviders(false);
         setUploadState("loading");
 
         const dummyVC = buildDummyVC(type);
 
         setTimeout(() => {
-            setUploadedVC(dummyVC);
             setUploadState("verified");
 
             setTimeout(() => {
@@ -184,11 +177,12 @@ export default function VerificationScreen() {
         }, 1200);
     };
 
-    const OptionButton = ({ title, subtitle, icon: Icon, onPress }: any) => (
+    const OptionButton = ({ title, subtitle, icon: Icon, onPress, disabled = false, statusIcon }: any) => (
         <TouchableOpacity
             onPress={onPress}
+            disabled={disabled}
             style={{ backgroundColor: colors.card }}
-            className="p-4 rounded-xl flex-row items-center"
+            className={`p-4 rounded-xl flex-row items-center ${disabled ? "opacity-80" : ""}`}
         >
             <View
                 className="w-10 h-10 rounded-lg items-center justify-center mr-3"
@@ -200,7 +194,7 @@ export default function VerificationScreen() {
                 <IrisText variant="h3" className="mb-0 mr-2">{title}</IrisText>
                 <IrisText variant="muted">{subtitle}</IrisText>
             </View>
-            <ChevronRight size={18} color={colors.primary} opacity={0.4} />
+            {statusIcon ?? <ChevronRight size={18} color={colors.primary} opacity={0.4} />}
         </TouchableOpacity>
     );
 
@@ -274,86 +268,24 @@ export default function VerificationScreen() {
                                 <>
                                     <OptionButton
                                         title="Upload from Device"
-                                        subtitle="Use a dummy VC upload and continue to the next step"
+                                        subtitle={
+                                            uploadState === "loading"
+                                                ? "Loading dummy VC and verifying access..."
+                                                : uploadState === "verified"
+                                                    ? "VC verified. Moving to the next page..."
+                                                    : "Use a dummy VC upload and continue to the next step"
+                                        }
                                         icon={UploadCloud}
                                         onPress={handleUploadFromDevice}
+                                        disabled={uploadState !== "idle"}
+                                        statusIcon={
+                                            uploadState === "loading" ? (
+                                                <ActivityIndicator size="small" color={colors.primary} />
+                                            ) : uploadState === "verified" ? (
+                                                <CheckCircle2 size={20} color={colors.primary} />
+                                            ) : undefined
+                                        }
                                     />
-
-                                    {uploadState === "loading" && (
-                                        <View
-                                            className="mb-3 p-3 rounded-xl flex-row items-center"
-                                            style={{ backgroundColor: colors.card }}
-                                        >
-                                            <ActivityIndicator size="small" color={colors.primary} />
-                                            <IrisText className="ml-3">Loading dummy VC and verifying access...</IrisText>
-                                        </View>
-                                    )}
-
-                                    {uploadState === "verified" && uploadedVC && (
-                                        <View
-                                            className="mb-3 p-3 rounded-xl flex-row items-center"
-                                            style={{ backgroundColor: colors.primary + "10" }}
-                                        >
-                                            <CheckCircle2 size={22} color={colors.primary} />
-                                            <IrisText className="ml-3 font-semibold" style={{ color: colors.primary }}>
-                                                VC verified. Moving to the next page...
-                                            </IrisText>
-                                        </View>
-                                    )}
-
-                                    {uploadError && (
-                                        <View
-                                            className="mb-3 p-3 rounded-xl"
-                                            style={{ backgroundColor: "#FEE2E2" }}
-                                        >
-                                            <IrisText style={{ color: "#991B1B" }}>{uploadError}</IrisText>
-                                        </View>
-                                    )}
-
-                                    {uploadedVC && (
-                                        <>
-                                            <View className="mb-4">
-                                                <IrisText variant="muted" className="mb-4 text-xs uppercase tracking-widest">Uploaded VC</IrisText>
-                                                <View
-                                                    className="flex-row items-center p-4 rounded-xl"
-                                                    style={{ backgroundColor: colors.card }}
-                                                >
-                                                    <View className="w-10 h-10 bg-gray-500/10 rounded-lg items-center justify-center mr-3">
-                                                        <FileText size={20} color={colors.primary} />
-                                                    </View>
-                                                    <View className="flex-1">
-                                                        <IrisText variant="h3" className="mb-0">{uploadedVC.name}</IrisText>
-                                                        <IrisText variant="muted" className="text-xs">
-                                                            {uploadedVC.matchedDocs.length > 0
-                                                                ? uploadedVC.matchedDocs.join(" • ")
-                                                                : "Credential imported successfully"}
-                                                        </IrisText>
-                                                    </View>
-                                                    <CheckCircle2 size={20} color={colors.primary} />
-                                                </View>
-                                            </View>
-
-                                            <View
-                                                className="mb-3 p-3 rounded-xl flex-row items-center"
-                                                style={{ backgroundColor: colors.primary + "10" }}
-                                            >
-                                                <Sparkles size={20} color={colors.primary} />
-                                                <IrisText className="ml-3 font-bold" style={{ color: colors.primary }}>
-                                                    {getDetectedRoleLabel(uploadedVC.detectedRole)}
-                                                </IrisText>
-                                            </View>
-
-                                            <IrisText variant="muted" className="mb-6 text-sm">
-                                                Iris has loaded this dummy VC successfully. You will be taken to the next step automatically.
-                                            </IrisText>
-                                        </>
-                                    )}
-
-                                    <TouchableOpacity onPress={() => setShowProviders(true)} className="items-center pb-4">
-                                        <IrisText style={{ color: colors.primary, fontSize: 16, textDecorationLine: "underline" }}>
-                                            Don't have VCs? Get them from your provider
-                                        </IrisText>
-                                    </TouchableOpacity>
                                 </>
                             ) : (
                                 <>
