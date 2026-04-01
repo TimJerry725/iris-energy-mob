@@ -1,31 +1,82 @@
-
 import React from "react";
-import { View, TouchableOpacity, ScrollView, Dimensions } from "react-native";
+import { View, ScrollView, Dimensions, TouchableOpacity } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { ArrowLeft, TrendingUp, TrendingDown, Info, Calendar, MapPin, Zap } from "lucide-react-native";
 import { IrisScreen } from "../../../components/IrisScreen";
 import { IrisText } from "../../../components/IrisText";
-import { IrisButton } from "../../../components/IrisButton";
 import { IrisCard } from "../../../components/IrisCard";
+import {
+    TrendingUp, TrendingDown, MapPin, Zap, Leaf, Wind, Droplet,
+    Calendar, Clock, ShieldCheck, Building2, BarChart2
+} from "../../../components/AppIcons";
 import { useTheme } from "../../../context/ThemeContext";
 import { MARKET_DATA } from "../../../constants/marketData";
-import Svg, { Line, Polyline, Defs, LinearGradient, Stop } from "react-native-svg";
+import Svg, { Polyline, Defs, LinearGradient as SvgLinearGradient, Stop, Path } from "react-native-svg";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { CONTROL_RADIUS } from "../../../components/controlStyles";
 
 const { width } = Dimensions.get("window");
+const CARD_WIDTH = width - 48;
+
+// Extended mock data for energy detail (in real app this comes from backend)
+const ASSET_DETAIL: Record<string, {
+    discom: string;
+    certification: string;
+    contractType: string;
+    minOrder: string;
+    deliveryTime: string;
+    saleWindow: string;
+    co2Saved: string;
+    availability: string;
+}> = {
+    "1": { discom: "Rajasthan Vidyut Prasaran Nigam", certification: "REC Certified", contractType: "Fixed Rate", minOrder: "10 kWh", deliveryTime: "Same Day", saleWindow: "06:00 – 18:00", co2Saved: "0.82 kg/kWh", availability: "High" },
+    "2": { discom: "TANGEDCO", certification: "ISO 50001", contractType: "Variable Rate", minOrder: "25 kWh", deliveryTime: "Next Day", saleWindow: "08:00 – 20:00", co2Saved: "0.91 kg/kWh", availability: "Medium" },
+    "3": { discom: "POSOCO National", certification: "BIS Certified", contractType: "Spot Price", minOrder: "50 kWh", deliveryTime: "Instant", saleWindow: "00:00 – 24:00", co2Saved: "0.65 kg/kWh", availability: "Very High" },
+    "4": { discom: "BESCOM Karnataka", certification: "GreenPower Cert.", contractType: "Fixed Rate", minOrder: "5 kWh",  deliveryTime: "Same Day", saleWindow: "07:00 – 19:00", co2Saved: "0.98 kg/kWh", availability: "High" },
+    "5": { discom: "MSEDCL Maharashtra", certification: "REC Certified", contractType: "Fixed Rate", minOrder: "10 kWh", deliveryTime: "Same Day", saleWindow: "09:00 – 21:00", co2Saved: "0.80 kg/kWh", availability: "Medium" },
+    "101": { discom: "Residential Solar", certification: "Safety Verified", contractType: "Peer-to-Peer", minOrder: "1 kWh", deliveryTime: "Instant", saleWindow: "06:00 – 18:00", co2Saved: "0.15 kg/kWh", availability: "Personal" },
+    "102": { discom: "Home Wind", certification: "ISO 9001", contractType: "Peer-to-Peer", minOrder: "1 kWh", deliveryTime: "Instant", saleWindow: "00:00 – 24:00", co2Saved: "0.08 kg/kWh", availability: "Personal" },
+    "103": { discom: "EV Battery System", certification: "Lithium Safe", contractType: "Fixed Rate", minOrder: "1 kWh", deliveryTime: "Instant", saleWindow: "18:00 – 22:00", co2Saved: "0.22 kg/kWh", availability: "Personal" },
+};
+
+const getEnergyTypeIcon = (type: string, size: number, color: string) => {
+    switch (type) {
+        case "solar": return <Leaf size={size} color={color} />;
+        case "wind":  return <Wind size={size} color={color} />;
+        case "hydro": return <Droplet size={size} color={color} />;
+        default:      return <Zap size={size} color={color} />;
+    }
+};
+
+const getTypeGradient = (type: string) => {
+    switch (type) {
+        case "solar": return ["#FFB347", "#FF8C00"];
+        case "wind":  return ["#56CCF2", "#2F80ED"];
+        case "hydro": return ["#43E97B", "#38F9D7"];
+        default:      return ["#00E673", "#1FD0B4"];
+    }
+};
 
 export default function AssetDetailsScreen() {
-    const { id } = useLocalSearchParams<{ id: string }>();
+    const { id, role } = useLocalSearchParams<{ id: string; role?: string }>();
     const router = useRouter();
-    const { colors } = useTheme();
+    const { colors, theme } = useTheme();
+    const insets = useSafeAreaInsets();
+    const isDark = theme === "dark";
 
     const asset = MARKET_DATA.find((item) => item.id === id);
+    const detail = ASSET_DETAIL[id] ?? ASSET_DETAIL["1"];
 
     if (!asset) {
         return (
-            <IrisScreen>
-                <View className="flex-1 items-center justify-center">
-                    <IrisText variant="h2">Asset not found</IrisText>
-                    <IrisButton label="Go Back" onPress={() => router.back()} className="mt-4" />
+            <IrisScreen topInset={false}>
+                <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+                    <IrisText>Asset not found</IrisText>
+                    <TouchableOpacity
+                        onPress={() => router.back()}
+                        style={{ marginTop: 16, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12, backgroundColor: colors.primary }}
+                    >
+                        <IrisText style={{ color: "#fff", fontWeight: "700" }}>Go Back</IrisText>
+                    </TouchableOpacity>
                 </View>
             </IrisScreen>
         );
@@ -35,113 +86,224 @@ export default function AssetDetailsScreen() {
     const trendValues = asset.trend;
     const minVal = Math.min(...trendValues);
     const maxVal = Math.max(...trendValues);
-    const range = maxVal - minVal || 1; // Prevent division by zero
+    const range = maxVal - minVal || 1;
+    const graphH = 80;
+    const graphW = CARD_WIDTH - 32;
 
-    // Create points for graph
-    const points = trendValues.map((val, index) => {
-        const x = (index / (trendValues.length - 1)) * (width - 48);
-        const y = 80 - ((val - minVal) / range) * 60; // Scale to fit height
-        return `${x},${y}`;
-    }).join(" ");
+    const pts = trendValues.map((val, i) => {
+        const x = (i / (trendValues.length - 1)) * graphW;
+        const y = graphH - ((val - minVal) / range) * (graphH - 12) - 4;
+        return { x, y };
+    });
+    const polyline = pts.map(p => `${p.x},${p.y}`).join(" ");
+    const areaPath = `M0,${graphH} ${pts.map(p => `L${p.x},${p.y}`).join(" ")} L${graphW},${graphH} Z`;
+
+    const changeColor = isPositive ? colors.primary : colors.danger;
+    const typeColors = getTypeGradient(asset.type);
 
     return (
-        <IrisScreen>
-            <View className="flex-1">
-                {/* Header */}
-                <View className="mb-6 flex-row items-center justify-between">
-                    <TouchableOpacity
-                        onPress={() => router.back()}
-                        className="w-10 h-10 items-center justify-center rounded-full"
-                        style={{ backgroundColor: colors.card }}
-                    >
-                        <ArrowLeft size={24} color={colors.foreground} />
-                    </TouchableOpacity>
-                    <IrisText variant="h2" style={{ fontSize: 18 }}>Asset Details</IrisText>
-                    <View className="w-10" />
-                </View>
-
-                {/* Main Price Card */}
-                <View className="mb-8 items-center">
-                    <View className="w-16 h-16 rounded-3xl items-center justify-center mb-4" style={{ backgroundColor: colors.card }}>
-                        <IrisText variant="h1" style={{ fontSize: 24 }}>{asset.symbol.substring(0, 2)}</IrisText>
+        <View style={{ flex: 1, backgroundColor: colors.background }}>
+            <ScrollView
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 120, paddingTop: 16 }}
+            >
+                {/* Hero Card */}
+                <IrisCard style={{ marginBottom: 20, padding: 20 }}>
+                    <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 16 }}>
+                        <View style={{
+                            width: 52, height: 52, borderRadius: 16,
+                            backgroundColor: typeColors[0] + "22",
+                            alignItems: "center", justifyContent: "center",
+                            borderWidth: 1, borderColor: typeColors[0] + "44",
+                            marginRight: 14,
+                        }}>
+                            {getEnergyTypeIcon(asset.type, 26, typeColors[0])}
+                        </View>
+                        <View style={{ flex: 1 }}>
+                            <IrisText style={{ fontSize: 18, fontWeight: "800", color: colors.onSurface }}>{asset.name}</IrisText>
+                            <IrisText style={{ fontSize: 13, color: colors.onSurfaceVariant, fontWeight: "500", marginTop: 2 }}>
+                                {asset.type.toUpperCase()} • {asset.symbol}
+                            </IrisText>
+                        </View>
+                        <View style={{
+                            paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20,
+                            backgroundColor: detail.availability === "High" || detail.availability === "Very High"
+                                ? "#00E67320" : "#FFB34720",
+                        }}>
+                            <IrisText style={{
+                                fontSize: 11, fontWeight: "700",
+                                color: detail.availability === "High" || detail.availability === "Very High" ? "#00A55A" : "#C97000"
+                            }}>
+                                {detail.availability}
+                            </IrisText>
+                        </View>
                     </View>
-                    <IrisText variant="h2" className="mb-1">{asset.name}</IrisText>
-                    <IrisText variant="muted" className="mb-4">{asset.symbol}</IrisText>
 
-                    <IrisText variant="h1" style={{ fontSize: 40, lineHeight: 48 }}>₹{asset.price.toFixed(2)}</IrisText>
-                    <View className="flex-row items-center mt-2 px-3 py-1 rounded-full" style={{ backgroundColor: isPositive ? "#00E67320" : "#FF3B3020" }}>
-                        {isPositive ? <TrendingUp size={16} color="#00E673" className="mr-1" /> : <TrendingDown size={16} color="#FF3B30" className="mr-1" />}
-                        <IrisText style={{ color: isPositive ? "#00E673" : "#FF3B30", fontWeight: "600" }}>
-                            {isPositive ? "+" : ""}{asset.change.toFixed(2)} ({asset.changePercent.toFixed(2)}%)
-                        </IrisText>
+                    {/* Price */}
+                    <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between" }}>
+                        <View>
+                            <IrisText style={{ fontSize: 36, fontWeight: "800", color: colors.onSurface, letterSpacing: -1 }}>
+                                ₹{asset.price.toFixed(2)}
+                            </IrisText>
+                            <IrisText style={{ fontSize: 13, color: colors.onSurfaceVariant, marginTop: 2 }}>per kWh</IrisText>
+                        </View>
+                        <View style={{
+                            flexDirection: "row", alignItems: "center",
+                            backgroundColor: changeColor + "18",
+                            paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12,
+                        }}>
+                            {isPositive
+                                ? <TrendingUp size={14} color={changeColor} />
+                                : <TrendingDown size={14} color={changeColor} />}
+                            <IrisText style={{ color: changeColor, fontWeight: "700", fontSize: 13, marginLeft: 5 }}>
+                                {isPositive ? "+" : ""}{asset.change.toFixed(2)} ({asset.changePercent.toFixed(1)}%)
+                            </IrisText>
+                        </View>
                     </View>
-                </View>
+                </IrisCard>
 
-                {/* Graph */}
-                <IrisCard className="p-4 mb-6" style={{ backgroundColor: colors.card }}>
-                    <IrisText variant="h3" className="mb-4">Price Trend (7 Days)</IrisText>
-                    <View className="h-24 justify-center items-center">
-                        <Svg height="80" width={width - 48}>
+                {/* Price Trend Graph */}
+                <IrisCard style={{ marginBottom: 20, padding: 16 }}>
+                    <IrisText style={{ fontSize: 14, fontWeight: "700", color: colors.onSurface, marginBottom: 12 }}>
+                        7-Day Price Trend
+                    </IrisText>
+                    <View style={{ height: graphH + 8 }}>
+                        <Svg height={graphH + 8} width={graphW}>
                             <Defs>
-                                <LinearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
-                                    <Stop offset="0" stopColor={isPositive ? "#00E673" : "#FF3B30"} stopOpacity="0.4" />
-                                    <Stop offset="1" stopColor={isPositive ? "#00E673" : "#FF3B30"} stopOpacity="0" />
-                                </LinearGradient>
+                                <SvgLinearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+                                    <Stop offset="0" stopColor={changeColor} stopOpacity="0.25" />
+                                    <Stop offset="1" stopColor={changeColor} stopOpacity="0" />
+                                </SvgLinearGradient>
                             </Defs>
+                            <Path d={areaPath} fill="url(#areaGrad)" />
                             <Polyline
-                                points={`0,80 ${points} ${width - 48},80`}
-                                fill="url(#grad)"
-                            />
-                            <Polyline
-                                points={points}
+                                points={polyline}
                                 fill="none"
-                                stroke={isPositive ? "#00E673" : "#FF3B30"}
-                                strokeWidth="3"
+                                stroke={changeColor}
+                                strokeWidth="2.5"
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
                             />
                         </Svg>
                     </View>
+                    <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 6 }}>
+                        <IrisText style={{ fontSize: 11, color: colors.muted }}>₹{minVal.toFixed(2)}</IrisText>
+                        <IrisText style={{ fontSize: 11, color: colors.muted }}>₹{maxVal.toFixed(2)}</IrisText>
+                    </View>
                 </IrisCard>
 
-                {/* Info Cards */}
-                <View className="flex-row flex-wrap justify-between">
-                    <IrisCard className="w-[48%] p-4 mb-4" style={{ backgroundColor: colors.card }}>
-                        <View className="items-start mb-2">
-                            <MapPin size={20} color={colors.primary} />
+                {/* Key Stats Grid */}
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12, marginBottom: 20 }}>
+                    {[
+                        { icon: <Zap size={18} color={colors.primary} />,     label: "Capacity",     value: asset.capacity || "N/A" },
+                        { icon: <MapPin size={18} color="#3EBAF4" />,          label: "Location",     value: asset.location || "N/A" },
+                        { icon: <Clock size={18} color="#FFB347" />,           label: "Sale Window",  value: detail.saleWindow },
+                        { icon: <Calendar size={18} color="#8B2CF4" />,        label: "Delivery",     value: detail.deliveryTime },
+                        { icon: <ShieldCheck size={18} color="#00A55A" />,     label: "Certified",    value: detail.certification },
+                        { icon: <Leaf size={18} color="#43E97B" />,            label: "CO₂ Saved",    value: detail.co2Saved },
+                    ].map((stat, i) => (
+                        <View key={i} style={{
+                            width: (CARD_WIDTH - 12) / 2,
+                            backgroundColor: colors.surface,
+                            borderRadius: 16,
+                            padding: 14,
+                            borderWidth: 1,
+                            borderColor: colors.outlineVariant,
+                        }}>
+                            <View style={{ marginBottom: 8 }}>{stat.icon}</View>
+                            <IrisText style={{ fontSize: 11, color: colors.onSurfaceVariant, fontWeight: "500", marginBottom: 3 }}>
+                                {stat.label}
+                            </IrisText>
+                            <IrisText style={{ fontSize: 13, fontWeight: "700", color: colors.onSurface }}>
+                                {stat.value}
+                            </IrisText>
                         </View>
-                        <IrisText variant="muted" className="text-xs mb-1">Location</IrisText>
-                        <IrisText variant="h3" style={{ fontSize: 14 }}>{asset.location || "N/A"}</IrisText>
-                    </IrisCard>
-                    <IrisCard className="w-[48%] p-4 mb-4" style={{ backgroundColor: colors.card }}>
-                        <View className="items-start mb-2">
-                            <Zap size={20} color="#FFD700" />
-                        </View>
-                        <IrisText variant="muted" className="text-xs mb-1">Capacity</IrisText>
-                        <IrisText variant="h3" style={{ fontSize: 14 }}>{asset.capacity || "Unknown"}</IrisText>
-                    </IrisCard>
+                    ))}
                 </View>
 
-                <IrisCard className="p-4 mb-8" style={{ backgroundColor: colors.card }}>
-                    <View className="flex-row items-center mb-2">
-                        <Info size={20} color={colors.muted} className="mr-2" />
-                        <IrisText variant="h3">About</IrisText>
-                    </View>
-                    <IrisText style={{ lineHeight: 22, color: colors.muted }}>
-                        {asset.description || "No description available for this asset."}
+                {/* DISCOM & Contract Info */}
+                <IrisCard style={{ marginBottom: 20, padding: 16 }}>
+                    <IrisText style={{ fontSize: 14, fontWeight: "700", color: colors.onSurface, marginBottom: 14 }}>
+                        Distribution & Contract
+                    </IrisText>
+                    {[
+                        { icon: <Building2 size={16} color={colors.muted} />, label: "DISCOM",         value: detail.discom },
+                        { icon: <BarChart2 size={16} color={colors.muted} />, label: "Contract Type",  value: detail.contractType },
+                        { icon: <Zap size={16} color={colors.muted} />,       label: "Min. Order",     value: detail.minOrder },
+                    ].map((row, i) => (
+                        <View key={i} style={{
+                            flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+                            paddingVertical: 10,
+                            borderBottomWidth: i < 2 ? 1 : 0,
+                            borderColor: colors.outlineVariant,
+                        }}>
+                            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                                {row.icon}
+                                <IrisText style={{ fontSize: 13, color: colors.onSurfaceVariant }}>{row.label}</IrisText>
+                            </View>
+                            <IrisText style={{ fontSize: 13, fontWeight: "700", color: colors.onSurface }}>{row.value}</IrisText>
+                        </View>
+                    ))}
+                </IrisCard>
+
+                {/* Description */}
+                <IrisCard style={{ marginBottom: 20, padding: 16 }}>
+                    <IrisText style={{ fontSize: 14, fontWeight: "700", color: colors.onSurface, marginBottom: 10 }}>
+                        About this Source
+                    </IrisText>
+                    <IrisText style={{ fontSize: 14, color: colors.onSurfaceVariant, lineHeight: 22 }}>
+                        {asset.description || "No description available."}
                     </IrisText>
                 </IrisCard>
-            </View>
+            </ScrollView>
 
-            {/* Action Buttons */}
-            <View className="pb-8 pt-4 flex-row gap-4">
-                <View className="flex-1">
-                    <IrisButton variant="outline" label="Sell" onPress={() => { }} style={{ borderColor: "#FF3B30" }} textStyle={{ color: "#FF3B30" }} />
+            {/* Sticky Buy Button */}
+            <View style={{
+                position: "absolute",
+                bottom: 0, left: 0, right: 0,
+                backgroundColor: colors.surface,
+                borderTopWidth: 1,
+                borderColor: colors.outlineVariant,
+                paddingHorizontal: 20,
+                paddingTop: 14,
+                paddingBottom: Math.max(insets.bottom, 16) + 4,
+            }}>
+                <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                    <View>
+                        <IrisText style={{ fontSize: 11, color: colors.onSurfaceVariant, fontWeight: "500" }}>Total per kWh</IrisText>
+                        <IrisText style={{ fontSize: 22, fontWeight: "800", color: colors.onSurface }}>₹{asset.price.toFixed(2)}</IrisText>
+                    </View>
+                    <View style={{ alignItems: "flex-end" }}>
+                        <IrisText style={{ fontSize: 11, color: colors.onSurfaceVariant, fontWeight: "500" }}>Min. Order</IrisText>
+                        <IrisText style={{ fontSize: 14, fontWeight: "700", color: colors.onSurface }}>{detail.minOrder}</IrisText>
+                    </View>
                 </View>
-                <View className="flex-1">
-                    <IrisButton variant="primary" label="Buy" onPress={() => { }} style={{ backgroundColor: "#00E673" }} textStyle={{ color: "#000" }} />
-                </View>
+                <TouchableOpacity
+                    onPress={() => {
+                        if (role === "seller") {
+                            router.push({ pathname: "/chatbot/publish-intent", params: { role: "seller", id: asset.id } });
+                        } else {
+                            router.push({ pathname: "/chatbot/orders", params: { role: role ?? "buyer" } });
+                        }
+                    }}
+                    style={{
+                        height: 52,
+                        borderRadius: CONTROL_RADIUS,
+                        backgroundColor: role === "seller" ? colors.secondary : colors.primary,
+                        alignItems: "center",
+                        justifyContent: "center",
+                        shadowColor: role === "seller" ? colors.secondary : colors.primary,
+                        shadowOpacity: 0.4,
+                        shadowRadius: 12,
+                        shadowOffset: { width: 0, height: 4 },
+                        elevation: 6,
+                    }}
+                >
+                    <IrisText style={{ fontSize: 16, fontWeight: "800", color: "#04150E", letterSpacing: 0.3 }}>
+                        {role === "seller" ? "Edit Listing" : "Buy Energy"}
+                    </IrisText>
+                </TouchableOpacity>
             </View>
-        </IrisScreen>
+        </View>
     );
 }

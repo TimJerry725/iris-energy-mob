@@ -4,7 +4,6 @@ import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { IrisScreen } from "../../components/IrisScreen";
 import { IrisText } from "../../components/IrisText";
-import { IrisLogo } from "../../components/IrisLogo";
 import { useTheme } from "../../context/ThemeContext";
 
 const LANGUAGES = [
@@ -22,31 +21,39 @@ export default function LanguageSelectionScreen() {
 
     const handleSelect = (code: string) => {
         i18n.changeLanguage(code);
-        router.push("/(onboarding)/phone");
+        router.replace("/(onboarding)/phone");
     };
 
     return (
-        <IrisScreen>
-            <View className="mt-8 mb-12 items-center">
-                <IrisLogo width={160} height={50} />
-            </View>
-
-            <View className="mb-10">
+        <IrisScreen topInset={false}>
+            <View className="mb-6">
                 <IrisText variant="h1">Choose Language</IrisText>
                 <IrisText variant="muted">Select your preferred language to continue.</IrisText>
             </View>
 
-            <View className="space-y-4">
+            <View>
                 {LANGUAGES.map((lang) => (
                     <TouchableOpacity
                         key={lang.code}
                         onPress={() => handleSelect(lang.code)}
                         activeOpacity={0.7}
-                        style={{ backgroundColor: colors.card, borderColor: colors.muted + "20" }}
-                        className="p-6 rounded-3xl border flex-row items-center mb-4"
+                        style={{
+                            backgroundColor: colors.surfaceContainerLow,
+                            borderColor: i18n.language === lang.code ? colors.primary : colors.outlineVariant,
+                            borderWidth: 1.5,
+                        }}
+                        className="p-4 rounded-[20px] flex-row items-center mb-3"
                     >
-                        <IrisText className="text-3xl mr-6">{lang.flag}</IrisText>
-                        <IrisText variant="h3" className="mb-0">{lang.name}</IrisText>
+                        <IrisText className="text-2xl mr-4">{lang.flag}</IrisText>
+                        <View className="flex-1">
+                            <IrisText variant="h3" className="mb-0">{lang.name}</IrisText>
+                        </View>
+                        {i18n.language === lang.code && (
+                            <View
+                                className="w-3 h-3 rounded-full"
+                                style={{ backgroundColor: colors.primary }}
+                            />
+                        )}
                     </TouchableOpacity>
                 ))}
             </View>

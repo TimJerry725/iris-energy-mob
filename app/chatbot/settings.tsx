@@ -1,12 +1,11 @@
 import React from "react";
 import { View, TouchableOpacity, ScrollView } from "react-native";
-import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
+import { Switch } from "react-native-paper";
 import { IrisScreen } from "../../components/IrisScreen";
 import { IrisText } from "../../components/IrisText";
-import { IrisLogo } from "../../components/IrisLogo";
 import { useTheme } from "../../context/ThemeContext";
-import { ArrowLeft, Sun, Moon, Languages as LanguagesIcon, User } from "lucide-react-native";
+import { Sun, Moon, Languages as LanguagesIcon, User } from "../../components/AppIcons";
 
 const LANGUAGES = [
     { code: "en", name: "English", nativeName: "English" },
@@ -18,30 +17,15 @@ const LANGUAGES = [
 ];
 
 export default function SettingsScreen() {
-    const router = useRouter();
     const { i18n } = useTranslation();
-    const { theme, toggleTheme, colors } = useTheme();
+    const { theme, toggleTheme, colors, paperTheme } = useTheme();
 
     const handleLanguageChange = (languageCode: string) => {
         i18n.changeLanguage(languageCode);
     };
 
     return (
-        <IrisScreen>
-            {/* Header */}
-            <View className="flex-row items-center justify-between mb-8">
-                <TouchableOpacity
-                    onPress={() => router.back()}
-                    className="w-12 h-12 rounded-full bg-gray-500/10 items-center justify-center"
-                >
-                    <ArrowLeft size={24} color={colors.foreground} />
-                </TouchableOpacity>
-
-                <IrisLogo width={120} height={40} />
-
-                <View className="w-12" />
-            </View>
-
+        <IrisScreen topInset={false}>
             <ScrollView showsVerticalScrollIndicator={false}>
                 {/* Profile Section */}
                 <View className="mb-8">
@@ -66,10 +50,9 @@ export default function SettingsScreen() {
                 {/* Theme Section */}
                 <View className="mb-8">
                     <IrisText variant="h2" className="mb-4">Appearance</IrisText>
-                    <TouchableOpacity
-                        onPress={toggleTheme}
+                    <View
                         className="flex-row items-center justify-between p-5 rounded-3xl"
-                        style={{ backgroundColor: colors.card }}
+                        style={{ backgroundColor: colors.surfaceContainerLow }}
                     >
                         <View className="flex-row items-center">
                             <View
@@ -89,18 +72,13 @@ export default function SettingsScreen() {
                                 </IrisText>
                             </View>
                         </View>
-                        <View
-                            className="w-14 h-7 rounded-full p-1"
-                            style={{ backgroundColor: theme === "dark" ? colors.primary : colors.muted + "40" }}
-                        >
-                            <View
-                                className="w-5 h-5 rounded-full bg-white shadow-lg"
-                                style={{
-                                    transform: [{ translateX: theme === "dark" ? 28 : 0 }],
-                                }}
-                            />
-                        </View>
-                    </TouchableOpacity>
+                        <Switch
+                            value={theme === "dark"}
+                            onValueChange={toggleTheme}
+                            color={colors.primary}
+                            theme={paperTheme}
+                        />
+                    </View>
                 </View>
 
                 {/* Language Section */}

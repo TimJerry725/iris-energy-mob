@@ -3,7 +3,7 @@ import { Text, TextProps } from "react-native";
 import { useTheme } from "../context/ThemeContext";
 
 interface IrisTextProps extends TextProps {
-    variant?: "h1" | "h2" | "h3" | "p" | "muted";
+    variant?: "h1" | "h2" | "h3" | "p" | "muted" | "metric";
     align?: "left" | "center" | "right";
 }
 
@@ -16,27 +16,30 @@ export const IrisText: React.FC<IrisTextProps> = ({
     ...props
 }) => {
     const { colors } = useTheme();
+    const textColor = variant === "muted" ? colors.muted : colors.foreground;
 
     const getVariantStyles = () => {
         switch (variant) {
+            case "metric":
+                return "text-4xl font-bold leading-tight tracking-tight";
             case "h1":
-                return "text-4xl font-black font-black mb-4";
+                return "text-2xl font-bold leading-tight mb-2";
             case "h2":
-                return "text-2xl font-bold font-bold mb-2";
+                return "text-xl font-bold leading-snug mb-1";
             case "h3":
-                return "text-xl font-medium font-medium mb-1";
+                return "text-base font-medium leading-normal mb-0";
             case "p":
-                return "text-lg font-regular font-regular leading-7";
+                return "text-base font-regular leading-relaxed";
             case "muted":
-                return "text-base font-regular font-regular text-slate-500 dark:text-slate-400";
+                return "text-sm font-regular leading-relaxed opacity-70";
             default:
-                return "text-lg font-regular font-regular";
+                return "text-base font-regular font-regular";
         }
     };
 
     return (
         <Text
-            style={[{ color: colors.foreground }, style]}
+            style={[{ color: textColor }, style]}
             className={`${getVariantStyles()} text-${align} ${className}`}
             {...props}
         >

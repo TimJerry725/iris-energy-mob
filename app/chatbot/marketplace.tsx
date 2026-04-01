@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { View, ScrollView, TouchableOpacity, Dimensions, Animated, FlatList, TextInput } from "react-native";
 import { useRouter } from "expo-router";
+import Svg, { Line, Polyline, Circle, Defs, LinearGradient, Stop } from "react-native-svg";
+import { IrisScreen } from "../../components/IrisScreen";
+import { IrisText } from "../../components/IrisText";
+import { IrisCard } from "../../components/IrisCard";
 import {
     Search,
     TrendingUp,
@@ -14,11 +18,8 @@ import {
     Wind,
     Sun,
     Layers
-} from "lucide-react-native";
-import Svg, { Line, Polyline, Circle, Defs, LinearGradient, Stop } from "react-native-svg";
-import { IrisScreen } from "../../components/IrisScreen";
-import { IrisText } from "../../components/IrisText";
-import { IrisCard } from "../../components/IrisCard";
+} from "../../components/AppIcons";
+import { CONTROL_HEIGHT, CONTROL_RADIUS } from "../../components/controlStyles";
 import { useTheme } from "../../context/ThemeContext";
 import { MARKET_DATA, EnergyAsset } from "../../constants/marketData";
 
@@ -31,6 +32,10 @@ const MarketplaceScreen = () => {
     const { colors, theme } = useTheme();
     const [searchQuery, setSearchQuery] = useState("");
     const [activeTab, setActiveTab] = useState("Explore");
+    const positiveColor = colors.primary;
+    const buyColor = colors.tertiary;
+    const negativeColor = colors.danger;
+    const pendingColor = colors.secondary;
 
     const renderAssetItem = ({ item }: { item: EnergyAsset }) => {
         const isPositive = item.change >= 0;
@@ -47,7 +52,7 @@ const MarketplaceScreen = () => {
                             className="w-12 h-12 rounded-2xl items-center justify-center mr-4"
                             style={{ backgroundColor: colors.card }}
                         >
-                            <Icon size={24} color={isPositive ? "#00E673" : "#FF3B30"} />
+                            <Icon size={24} color={isPositive ? positiveColor : negativeColor} />
                         </View>
                         <View className="flex-1">
                             <IrisText variant="h3" style={{ fontSize: 16 }}>{item.symbol}</IrisText>
@@ -59,13 +64,13 @@ const MarketplaceScreen = () => {
                         <IrisText variant="h3" style={{ fontSize: 16 }}>₹{item.price.toFixed(2)}</IrisText>
                         <View className="flex-row items-center">
                             {isPositive ? (
-                                <TrendingUp size={12} color="#00E673" className="mr-1" />
+                                <TrendingUp size={12} color={positiveColor} style={{ marginRight: 4 }} />
                             ) : (
-                                <TrendingDown size={12} color="#FF3B30" className="mr-1" />
+                                <TrendingDown size={12} color={negativeColor} style={{ marginRight: 4 }} />
                             )}
                             <IrisText
                                 style={{
-                                    color: isPositive ? "#00E673" : "#FF3B30",
+                                    color: isPositive ? positiveColor : negativeColor,
                                     fontSize: 12,
                                     fontWeight: "600"
                                 }}
@@ -92,8 +97,11 @@ const MarketplaceScreen = () => {
                 </View>
 
                 {/* Search Bar */}
-                <View className="mb-6 flex-row items-center bg-gray-500/10 rounded-2xl px-4 py-3">
-                    <Search size={20} color={colors.muted} className="mr-3" />
+                <View
+                    className="mb-6 flex-row items-center bg-gray-500/10 px-4"
+                    style={{ height: CONTROL_HEIGHT, borderRadius: CONTROL_RADIUS }}
+                >
+                    <Search size={20} color={colors.muted} style={{ marginRight: 12 }} />
                     <TextInput
                         placeholder="Search for providers, grids, or assets"
                         placeholderTextColor={colors.muted}
@@ -151,10 +159,13 @@ const MarketplaceScreen = () => {
                             ].map((order) => (
                                 <IrisCard key={order.id} className="p-4 mb-3 border-transparent" style={{ backgroundColor: colors.card }}>
                                     <View className="flex-row justify-between items-center">
-                                        <View>
-                                            <View className="flex-row items-center mb-1">
-                                                <View className={`px-2 py-0.5 rounded-md mr-2 ${order.type === 'Buy' ? 'bg-[#00E673]/10' : 'bg-[#FF3B30]/10'}`}>
-                                                    <IrisText style={{ color: order.type === 'Buy' ? '#00E673' : '#FF3B30', fontSize: 10, fontWeight: '700' }}>{order.type.toUpperCase()}</IrisText>
+                                            <View>
+                                                <View className="flex-row items-center mb-1">
+                                                <View
+                                                    className="px-2 py-0.5 rounded-md mr-2"
+                                                    style={{ backgroundColor: (order.type === 'Buy' ? buyColor : positiveColor) + "12" }}
+                                                >
+                                                    <IrisText style={{ color: order.type === 'Buy' ? buyColor : positiveColor, fontSize: 10, fontWeight: '700' }}>{order.type.toUpperCase()}</IrisText>
                                                 </View>
                                                 <IrisText className="font-semibold">{order.asset}</IrisText>
                                             </View>
@@ -162,7 +173,7 @@ const MarketplaceScreen = () => {
                                         </View>
                                         <View className="items-end">
                                             <IrisText className="font-bold">{order.price}</IrisText>
-                                            <IrisText style={{ fontSize: 10, color: order.status === 'Completed' ? '#00E673' : '#A855F7' }}>{order.status}</IrisText>
+                                            <IrisText style={{ fontSize: 10, color: order.status === 'Completed' ? positiveColor : pendingColor }}>{order.status}</IrisText>
                                         </View>
                                     </View>
                                 </IrisCard>
@@ -179,11 +190,11 @@ const MarketplaceScreen = () => {
                                     </View>
                                     <View className="flex-row space-x-4">
                                         <View className="flex-row items-center">
-                                            <View className="w-2 h-2 rounded-full bg-[#00E673] mr-2" />
+                                            <View className="w-2 h-2 rounded-full mr-2" style={{ backgroundColor: positiveColor }} />
                                             <IrisText style={{ fontSize: 12, color: colors.muted }}>Sell</IrisText>
                                         </View>
                                         <View className="flex-row items-center">
-                                            <View className="w-2 h-2 rounded-full bg-[#A855F7] mr-2" />
+                                            <View className="w-2 h-2 rounded-full mr-2" style={{ backgroundColor: buyColor }} />
                                             <IrisText style={{ fontSize: 12, color: colors.muted }}>Buy</IrisText>
                                         </View>
                                     </View>
@@ -194,12 +205,12 @@ const MarketplaceScreen = () => {
                                     <Svg height="160" width={width - 80}>
                                         <Defs>
                                             <LinearGradient id="gradSell" x1="0" y1="0" x2="0" y2="1">
-                                                <Stop offset="0" stopColor="#00E673" stopOpacity="0.3" />
-                                                <Stop offset="1" stopColor="#00E673" stopOpacity="0" />
+                                                <Stop offset="0" stopColor={positiveColor} stopOpacity="0.3" />
+                                                <Stop offset="1" stopColor={positiveColor} stopOpacity="0" />
                                             </LinearGradient>
                                             <LinearGradient id="gradBuy" x1="0" y1="0" x2="0" y2="1">
-                                                <Stop offset="0" stopColor="#A855F7" stopOpacity="0.3" />
-                                                <Stop offset="1" stopColor="#A855F7" stopOpacity="0" />
+                                                <Stop offset="0" stopColor={buyColor} stopOpacity="0.3" />
+                                                <Stop offset="1" stopColor={buyColor} stopOpacity="0" />
                                             </LinearGradient>
                                         </Defs>
 
@@ -223,14 +234,14 @@ const MarketplaceScreen = () => {
                                         <Polyline
                                             points={`0,100 ${(width - 80) * 0.16},80 ${(width - 80) * 0.33},120 ${(width - 80) * 0.5},40 ${(width - 80) * 0.66},60 ${(width - 80) * 0.83},20 ${(width - 80)},50`}
                                             fill="none"
-                                            stroke="#00E673"
+                                            stroke={positiveColor}
                                             strokeWidth="3"
                                             strokeLinecap="round"
                                         />
                                         <Polyline
                                             points={`0,140 ${(width - 80) * 0.16},130 ${(width - 80) * 0.33},90 ${(width - 80) * 0.5},110 ${(width - 80) * 0.66},30 ${(width - 80) * 0.83},80 ${(width - 80)},100`}
                                             fill="none"
-                                            stroke="#A855F7"
+                                            stroke={buyColor}
                                             strokeWidth="3"
                                             strokeLinecap="round"
                                         />
@@ -239,16 +250,17 @@ const MarketplaceScreen = () => {
 
                                 {/* Chart Filters */}
                                 <View className="flex-row items-center justify-between mt-6">
-                                    <View className="flex-row bg-[#1e1e1e] rounded-full p-1 border border-gray-800">
+                                    <View className="flex-row rounded-full p-1 border" style={{ backgroundColor: colors.background, borderColor: colors.border }}>
                                         {["1D", "1W", "1M", "3M", "6M", "1Y", "5Y", "All"].map((filter, i) => (
                                             <TouchableOpacity
                                                 key={filter}
-                                                className={`px-3 py-1 rounded-full ${i === 0 ? "bg-[#333]" : ""}`}
+                                                className="px-3 py-1 rounded-full"
+                                                style={{ backgroundColor: i === 0 ? colors.card : "transparent" }}
                                             >
                                                 <IrisText
                                                     style={{
                                                         fontSize: 12,
-                                                        color: i === 0 ? "white" : colors.muted,
+                                                        color: i === 0 ? colors.foreground : colors.muted,
                                                         fontWeight: i === 0 ? "600" : "400"
                                                     }}
                                                 >
@@ -262,13 +274,13 @@ const MarketplaceScreen = () => {
                             <View className="flex-row justify-between mb-4">
                                 <IrisCard className="flex-1 p-4 mr-2" style={{ backgroundColor: colors.card }}>
                                     <IrisText variant="muted" className="mb-1 text-xs">Total Balance</IrisText>
-                                    <IrisText variant="h2" style={{ color: "#00E673" }}>₹14,250</IrisText>
-                                    <IrisText className="text-xs text-green-500">+12.5% this month</IrisText>
+                                    <IrisText variant="h2" style={{ color: positiveColor }}>₹14,250</IrisText>
+                                    <IrisText style={{ fontSize: 12, color: positiveColor }}>+12.5% this month</IrisText>
                                 </IrisCard>
                                 <IrisCard className="flex-1 p-4 ml-2" style={{ backgroundColor: colors.card }}>
                                     <IrisText variant="muted" className="mb-1 text-xs">Energy Used</IrisText>
-                                    <IrisText variant="h2" style={{ color: "#A855F7" }}>450 kWh</IrisText>
-                                    <IrisText className="text-xs text-purple-400">85% Clean Energy</IrisText>
+                                    <IrisText variant="h2" style={{ color: buyColor }}>450 kWh</IrisText>
+                                    <IrisText style={{ fontSize: 12, color: buyColor }}>85% Clean Energy</IrisText>
                                 </IrisCard>
                             </View>
                             <IrisCard className="p-4 mb-4" style={{ backgroundColor: colors.card }}>
@@ -297,15 +309,15 @@ const MarketplaceScreen = () => {
                 <View className="flex-row justify-between py-6" style={{ gap: 12 }}>
                     <TouchableOpacity
                         className="flex-1 h-12 rounded-xl items-center justify-center"
-                        style={{ backgroundColor: "#FF3B30" }}
+                        style={{ backgroundColor: colors.primary }}
                     >
-                        <IrisText style={{ color: "white", fontWeight: "700", fontSize: 16 }}>SELL ENERGY</IrisText>
+                        <IrisText style={{ color: colors.onPrimary, fontWeight: "700", fontSize: 16 }}>SELL ENERGY</IrisText>
                     </TouchableOpacity>
                     <TouchableOpacity
                         className="flex-1 h-12 rounded-xl items-center justify-center"
-                        style={{ backgroundColor: "#00E673" }}
+                        style={{ backgroundColor: buyColor }}
                     >
-                        <IrisText style={{ color: "#000", fontWeight: "700", fontSize: 16 }}>BUY ENERGY</IrisText>
+                        <IrisText style={{ color: colors.onTertiary, fontWeight: "700", fontSize: 16 }}>BUY ENERGY</IrisText>
                     </TouchableOpacity>
                 </View>
             </View>

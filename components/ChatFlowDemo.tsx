@@ -58,7 +58,7 @@ export function ChatFlowDemo() {
                                     <View key={idx} className="mb-2">
                                         <IrisText
                                             className="text-xs font-bold"
-                                            style={{ color: msg.sender === 'user' ? '#00FF7F' : '#6366F1' }}
+                                            style={{ color: msg.sender === 'user' ? colors.primary : colors.tertiary }}
                                         >
                                             {msg.sender === 'user' ? '👤 User' : '🤖 Iris'}:
                                         </IrisText>
@@ -74,8 +74,11 @@ export function ChatFlowDemo() {
                 ))}
             </ScrollView>
 
-            <View className="mt-6 p-4 bg-primary/10 rounded-2xl border border-primary/20">
-                <IrisText variant="h3" className="mb-2 text-primary">
+            <View
+                className="mt-6 p-4 rounded-2xl border"
+                style={{ backgroundColor: colors.primary + "10", borderColor: colors.primary + "20" }}
+            >
+                <IrisText variant="h3" className="mb-2" style={{ color: colors.primary }}>
                     💡 Integration Tip
                 </IrisText>
                 <IrisText variant="muted" className="text-xs">

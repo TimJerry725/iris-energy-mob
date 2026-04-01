@@ -5,15 +5,23 @@ module.exports = {
     theme: {
         extend: {
             fontFamily: {
-                regular: ["RedHatDisplay_400Regular"],
-                medium: ["RedHatDisplay_500Medium"],
-                bold: ["RedHatDisplay_700Bold"],
-                black: ["RedHatDisplay_900Black"],
+                regular: ["IBMPlexSans_400Regular"],
+                medium: ["IBMPlexSans_500Medium"],
+                bold: ["IBMPlexSans_700Bold"],
+                black: ["IBMPlexSans_700Bold"],
             },
             colors: {
                 primary: {
                     light: "#00E673",
-                    dark: "#00FF7F",
+                    dark: "#00E673",
+                },
+                secondary: {
+                    light: "#1FD0B4",
+                    dark: "#1FD0B4",
+                },
+                tertiary: {
+                    light: "#3EBAF4",
+                    dark: "#3EBAF4",
                 },
             },
         },

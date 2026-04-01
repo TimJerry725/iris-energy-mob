@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { View, TouchableOpacity, Modal, StyleSheet, Dimensions, Animated as RNAnimated } from "react-native";
-import { X, Mic, AudioLines, Volume2, VolumeX, Pause, Play } from "lucide-react-native";
+import { X, Mic, AudioLines, Volume2, VolumeX, Pause, Play } from "./AppIcons";
 import Animated, {
     useSharedValue,
     useAnimatedStyle,

@@ -1,13 +1,17 @@
 import React from "react";
-import { TouchableOpacity, Text, TouchableOpacityProps, View } from "react-native";
+import { StyleProp, TextStyle, View, ViewStyle } from "react-native";
+import { Button } from "react-native-paper";
 import { useTheme } from "../context/ThemeContext";
-import { FontAwesome } from "@expo/vector-icons";
+import { AppIcon, AppIconName } from "./AppIcons";
+import { CONTROL_HEIGHT, CONTROL_RADIUS } from "./controlStyles";
 
-interface IrisButtonProps extends TouchableOpacityProps {
+interface IrisButtonProps extends Omit<React.ComponentProps<typeof Button>, "children" | "icon" | "mode"> {
     label: string;
-    icon?: keyof typeof FontAwesome.glyphMap;
+    icon?: AppIconName;
     variant?: "primary" | "secondary" | "outline";
     size?: "lg" | "xl";
+    textStyle?: StyleProp<TextStyle>;
+    className?: string;
 }
 
 export const IrisButton: React.FC<IrisButtonProps> = ({
@@ -16,45 +20,76 @@ export const IrisButton: React.FC<IrisButtonProps> = ({
     variant = "primary",
     size = "lg",
     style,
+    textStyle,
+    className,
+    contentStyle,
     ...props
 }) => {
     const { colors } = useTheme();
 
-    const getVariantStyles = () => {
-        switch (variant) {
-            case "primary":
-                return "bg-primary-light dark:bg-primary-dark";
-            case "secondary":
-                return "bg-slate-200 dark:bg-slate-800";
-            case "outline":
-                return "border-2 border-primary-light dark:border-primary-dark";
-            default:
-                return "bg-primary-light dark:bg-primary-dark";
-        }
-    };
+    const mode = variant === "outline"
+        ? "outlined"
+        : variant === "secondary"
+            ? "contained-tonal"
+            : "contained";
 
-    const getTextStyles = () => {
-        if (variant === "outline") return "text-primary-light dark:text-primary-dark";
-        if (variant === "secondary") return "text-slate-900 dark:text-slate-100";
-        return "text-slate-900 font-bold";
-    };
+    const buttonColor = variant === "primary"
+        ? colors.primary
+        : variant === "secondary"
+            ? colors.secondaryContainer
+            : "transparent";
+
+    const textColor = variant === "outline"
+        ? colors.primary
+        : variant === "secondary"
+            ? colors.onSecondaryContainer
+            : colors.onPrimary;
 
     return (
-        <TouchableOpacity
-            activeOpacity={0.7}
-            className={`rounded-2xl flex-row items-center justify-center ${size === "xl" ? "p-6" : "p-4"} ${getVariantStyles()}`}
-            style={style}
-            {...props}
+        <View
+            className={className}
+            style={{
+                borderRadius: CONTROL_RADIUS,
+                overflow: "hidden",
+            }}
         >
-            {icon && (
-                <FontAwesome
-                    name={icon}
-                    size={24}
-                    color={variant === "outline" ? colors.primary : "#0F172A"}
-                    className="mr-3"
-                />
-            )}
-            <Text className={`text-xl text-center font-bold ${getTextStyles()}`}>{label}</Text>
-        </TouchableOpacity>
+            <Button
+                mode={mode}
+                icon={icon
+                    ? ({ size: iconSize, color }) => (
+                        <AppIcon
+                            name={icon}
+                            size={iconSize}
+                            color={typeof color === "string" ? color : textColor}
+                        />
+                    )
+                    : undefined}
+                buttonColor={buttonColor}
+                textColor={textColor}
+                style={style}
+                contentStyle={[
+                    {
+                        minHeight: CONTROL_HEIGHT,
+                        borderRadius: CONTROL_RADIUS,
+                    },
+                    contentStyle,
+                ]}
+                labelStyle={[
+                    {
+                        fontFamily: "IBMPlexSans_700Bold",
+                        fontSize: 16,
+                        letterSpacing: 0.2,
+                    },
+                    textStyle,
+                ]}
+                uppercase={false}
+                theme={{
+                    roundness: CONTROL_RADIUS,
+                }}
+                {...props}
+            >
+                {label}
+            </Button>
+        </View>
     );
 };

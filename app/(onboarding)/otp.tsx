@@ -1,13 +1,10 @@
 import React, { useState, useRef } from "react";
-import { View, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform } from "react-native";
+import { KeyboardAvoidingView, Platform, TextInput, TouchableOpacity, View } from "react-native";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { IrisScreen } from "../../components/IrisScreen";
 import { IrisText } from "../../components/IrisText";
-import { IrisButton } from "../../components/IrisButton";
 import { useTheme } from "../../context/ThemeContext";
-import { IrisLogo } from "../../components/IrisLogo";
-import { ArrowLeft, Languages } from "lucide-react-native";
 
 export default function OtpScreen() {
     const router = useRouter();
@@ -37,42 +34,27 @@ export default function OtpScreen() {
     };
 
     return (
-        <IrisScreen scrollable={false}>
-            {/* Header with Back Button and Language Switcher */}
-            <View className="flex-row items-center justify-between mb-8">
-                <TouchableOpacity
-                    onPress={() => router.back()}
-                    className="w-12 h-12 rounded-full bg-gray-500/10 items-center justify-center"
-                >
-                    <ArrowLeft size={24} color={colors.foreground} />
-                </TouchableOpacity>
-
-                <IrisLogo width={120} height={40} />
-
-                <TouchableOpacity
-                    onPress={() => router.push("/(onboarding)/language")}
-                    className="w-12 h-12 rounded-full bg-gray-500/10 items-center justify-center"
-                >
-                    <Languages size={24} color={colors.primary} />
-                </TouchableOpacity>
-            </View>
-
-            <View className="mb-10">
+        <IrisScreen scrollable={false} topInset={false}>
+            <View className="mb-6">
                 <IrisText variant="h1">{t("otp_title", "Enter Code")}</IrisText>
                 <IrisText variant="muted">{t("otp_subtitle", "We sent a 4-digit code. Use 0001 for testing.")}</IrisText>
             </View>
 
-            <View className="flex-row justify-between mb-10">
+            <View className="flex-row justify-between mb-6">
                 {otp.map((digit, index) => (
                     <View
                         key={index}
-                        style={{ backgroundColor: colors.card, borderColor: colors.muted + "20" }}
-                        className="w-[22%] aspect-square rounded-3xl border items-center justify-center"
+                        style={{
+                            backgroundColor: colors.surfaceContainerLow,
+                            borderColor: digit ? colors.primary : colors.outlineVariant,
+                            borderWidth: 1.5,
+                        }}
+                        className="w-[22%] aspect-square rounded-[20px] items-center justify-center"
                     >
                         <TextInput
                             ref={(el) => { inputs.current[index] = el!; }}
-                            className="text-4xl font-bold font-bold text-center w-full"
-                            style={{ color: colors.foreground }}
+                            className="text-2xl font-bold text-center w-full"
+                            style={{ color: colors.foreground, fontFamily: "IBMPlexSans_700Bold" }}
                             keyboardType="number-pad"
                             maxLength={1}
                             value={digit}
@@ -94,4 +76,3 @@ export default function OtpScreen() {
         </IrisScreen>
     );
 }
-

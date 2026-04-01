@@ -1,14 +1,15 @@
-import React, { useEffect, useState, useRef } from "react";
-import { View, Animated, TouchableOpacity, useWindowDimensions, ScrollView } from "react-native";
+import React, { useRef, useState } from "react";
+import { View, Animated, TouchableOpacity, useWindowDimensions, ScrollView, ActivityIndicator } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { useTranslation } from "react-i18next";
 import { IrisScreen } from "../../components/IrisScreen";
 import { IrisText } from "../../components/IrisText";
 import { IrisButton } from "../../components/IrisButton";
 import { useTheme } from "../../context/ThemeContext";
-import { IrisLogo } from "../../components/IrisLogo";
-import { ShieldCheck, Loader2, FileText, UploadCloud, CheckCircle2, X, ArrowLeft, Languages, ExternalLink, Zap, ChevronRight, Sparkles } from "lucide-react-native";
-import * as WebBrowser from 'expo-web-browser';
+import { FileText, UploadCloud, CheckCircle2, X, ExternalLink, Zap, ChevronRight, Sparkles } from "../../components/AppIcons";
+import * as WebBrowser from "expo-web-browser";
+
+type LoginRole = "buyer" | "seller";
+type DetectedRole = LoginRole | "prosumer" | null;
 
 interface ElectricityProvider {
     id: string;
@@ -17,6 +18,15 @@ interface ElectricityProvider {
     region: string;
     website: string;
     color: string;
+}
+
+interface UploadedVC {
+    id: string;
+    name: string;
+    uri: string;
+    matchedDocs: string[];
+    availableRoles: LoginRole[];
+    detectedRole: DetectedRole;
 }
 
 const PROVIDERS: ElectricityProvider[] = [
@@ -46,47 +56,64 @@ const PROVIDERS: ElectricityProvider[] = [
     }
 ];
 
+const buildDummyVC = (type?: string): UploadedVC => {
+    const dummyByType: Record<string, UploadedVC> = {
+        buyer: {
+            id: "dummy-buyer-vc",
+            name: "iris-buyer-vc.json",
+            uri: "mock://iris-buyer-vc.json",
+            matchedDocs: ["Utility Customer VC", "Consumer VC"],
+            availableRoles: ["buyer"],
+            detectedRole: "buyer",
+        },
+        seller: {
+            id: "dummy-seller-vc",
+            name: "iris-seller-vc.json",
+            uri: "mock://iris-seller-vc.json",
+            matchedDocs: ["Utility Customer VC", "Seller VC"],
+            availableRoles: ["seller"],
+            detectedRole: "seller",
+        },
+        prosumer: {
+            id: "dummy-prosumer-vc",
+            name: "iris-prosumer-vc.json",
+            uri: "mock://iris-prosumer-vc.json",
+            matchedDocs: ["Utility Customer VC", "Consumer VC", "Seller VC"],
+            availableRoles: ["buyer", "seller"],
+            detectedRole: "prosumer",
+        }
+    };
+
+    return dummyByType[type || "prosumer"] || dummyByType.prosumer;
+};
+
+const getDetectedRoleLabel = (role: DetectedRole) => {
+    if (role === "prosumer") return "Buyer + Seller access detected";
+    if (role === "seller") return "Seller access detected";
+    if (role === "buyer") return "Buyer access detected";
+    return "VC uploaded";
+};
+
 export default function VerificationScreen() {
     const router = useRouter();
-    const { type } = useLocalSearchParams<{ type: string }>();
-    const { t } = useTranslation();
+    const { type } = useLocalSearchParams<{ type?: string }>();
     const { colors } = useTheme();
     const { height } = useWindowDimensions();
 
     const [showVCSheet, setShowVCSheet] = useState(false);
     const [showProviders, setShowProviders] = useState(false);
     const [selectedProvider, setSelectedProvider] = useState<ElectricityProvider | null>(null);
-    const [uploadedDocs, setUploadedDocs] = useState<string[]>([]);
+    const [uploadedVC, setUploadedVC] = useState<UploadedVC | null>(null);
+    const [uploadError, setUploadError] = useState<string | null>(null);
+    const [uploadState, setUploadState] = useState<"idle" | "loading" | "verified">("idle");
 
-    const spinAnim = useRef(new Animated.Value(0)).current;
     const sheetAnim = useRef(new Animated.Value(height)).current;
     const overlayAnim = useRef(new Animated.Value(0)).current;
-
-    const [detectedRole, setDetectedRole] = useState<string | null>(null);
-
-    const docMap: Record<string, string[]> = {
-        buyer: ["Utility Customer VC", "Consumer VC"],
-        seller: ["Utility Customer VC", "Seller VC"],
-        prosumer: ["Utility Customer VC", "Consumer VC", "Seller VC"]
-    };
-
-    // When no type is provided, we show all possible VCs for discovery
-    const allPossibleDocs = ["Utility Customer VC", "Consumer VC", "Seller VC"];
-    const requiredDocs = type ? (docMap[type] || docMap.buyer) : allPossibleDocs;
-
-    useEffect(() => {
-        Animated.loop(
-            Animated.timing(spinAnim, {
-                toValue: 1,
-                duration: 2000,
-                useNativeDriver: true,
-            })
-        ).start();
-    }, []);
 
     const openVCSheet = (initialProviders: boolean = false) => {
         setShowVCSheet(true);
         setShowProviders(initialProviders);
+        setUploadError(null);
         Animated.parallel([
             Animated.spring(sheetAnim, {
                 toValue: 0,
@@ -121,14 +148,8 @@ export default function VerificationScreen() {
         });
     };
 
-    const handleDontHaveVC = () => {
-        // Show providers section
-        setShowProviders(true);
-    };
-
     const handleProviderSelect = async (provider: ElectricityProvider) => {
         setSelectedProvider(provider);
-        // Open provider website in in-app browser
         await WebBrowser.openBrowserAsync(provider.website, {
             toolbarColor: colors.background,
             controlsColor: colors.primary,
@@ -136,90 +157,65 @@ export default function VerificationScreen() {
         });
     };
 
-    const handleUpload = (doc: string) => {
-        if (!uploadedDocs.includes(doc)) {
-            const newDocs = [...uploadedDocs, doc];
-            setUploadedDocs(newDocs);
+    const handleUploadFromDevice = async () => {
+        setUploadError(null);
+        setShowProviders(false);
+        setUploadState("loading");
 
-            // Detect role based on uploaded docs
-            const hasConsumer = newDocs.includes("Consumer VC");
-            const hasSeller = newDocs.includes("Seller VC");
+        const dummyVC = buildDummyVC(type);
 
-            if (hasConsumer && hasSeller) setDetectedRole("prosumer");
-            else if (hasSeller) setDetectedRole("seller");
-            else if (hasConsumer) setDetectedRole("buyer");
-        }
-    };
-
-    const handleContinue = () => {
-        const finalRole = detectedRole || type || "buyer";
-        closeVCSheet();
         setTimeout(() => {
-            router.replace({
-                pathname: "/chatbot",
-                params: { role: finalRole }
-            });
-        }, 300);
+            setUploadedVC(dummyVC);
+            setUploadState("verified");
+
+            setTimeout(() => {
+                closeVCSheet();
+                setTimeout(() => {
+                    router.push({
+                        pathname: "/(onboarding)/vc-access",
+                        params: {
+                            vcName: dummyVC.name,
+                            detectedRole: dummyVC.detectedRole || "prosumer",
+                            availableRoles: dummyVC.availableRoles.join(","),
+                        }
+                    });
+                }, 320);
+            }, 700);
+        }, 1200);
     };
-
-    const spin = spinAnim.interpolate({
-        inputRange: [0, 1],
-        outputRange: ['0deg', '360deg'],
-    });
-
-    const allUploaded = uploadedDocs.length === requiredDocs.length;
 
     const OptionButton = ({ title, subtitle, icon: Icon, onPress }: any) => (
         <TouchableOpacity
             onPress={onPress}
-            style={{
-                backgroundColor: colors.card,
-                borderColor: colors.muted + "20"
-            }}
-            className="p-5 rounded-[28px] border mb-4 flex-row items-center"
+            style={{ backgroundColor: colors.card }}
+            className="p-4 rounded-xl flex-row items-center"
         >
-            <View className="w-12 h-12 bg-primary/10 rounded-2xl items-center justify-center mr-4">
-                <Icon size={24} color={colors.primary} />
+            <View
+                className="w-10 h-10 rounded-lg items-center justify-center mr-3"
+                style={{ backgroundColor: colors.primary + "15" }}
+            >
+                <Icon size={20} color={colors.primary} />
             </View>
             <View className="flex-1">
-                <IrisText variant="h3" className="mb-0 text-base mr-2">{title}</IrisText>
-                <IrisText variant="muted" className="text-xs">{subtitle}</IrisText>
+                <IrisText variant="h3" className="mb-0 mr-2">{title}</IrisText>
+                <IrisText variant="muted">{subtitle}</IrisText>
             </View>
-            <ChevronRight size={20} color={colors.primary} opacity={0.5} />
+            <ChevronRight size={18} color={colors.primary} opacity={0.4} />
         </TouchableOpacity>
     );
 
     return (
         <>
-            <IrisScreen>
-                {/* Header with Back Button and Language Switcher */}
-                <View className="flex-row items-center justify-between mb-8">
-                    <TouchableOpacity
-                        onPress={() => router.back()}
-                        className="w-12 h-12 rounded-full bg-gray-500/10 items-center justify-center"
-                    >
-                        <ArrowLeft size={24} color={colors.foreground} />
-                    </TouchableOpacity>
-
-                    <IrisLogo width={120} height={40} />
-
-                    <TouchableOpacity
-                        onPress={() => router.push("/(onboarding)/language")}
-                        className="w-12 h-12 rounded-full bg-gray-500/10 items-center justify-center"
-                    >
-                        <Languages size={24} color={colors.primary} />
-                    </TouchableOpacity>
-                </View>
-
-                <View className="mb-10">
+            <IrisScreen topInset={false}>
+                <View className="mb-6">
                     <IrisText variant="h1">Verify your identity</IrisText>
                     <IrisText variant="muted">Choose how you want to provide your Verifiable Credentials.</IrisText>
                 </View>
 
-                <View className="flex-1 space-y-4">
+                <View style={{ gap: 16 }}>
                     <OptionButton
                         title="I already have VCs"
-                        subtitle="Upload your existing credentials from your wallet"
+                        subtitle="Open upload options and import a VC from this device"
                         icon={FileText}
                         onPress={() => openVCSheet(false)}
                     />
@@ -231,40 +227,6 @@ export default function VerificationScreen() {
                         onPress={() => openVCSheet(true)}
                     />
 
-                    {uploadedDocs.length > 0 && (
-                        <View className="mt-8">
-                            <IrisText variant="muted" className="mb-4 text-xs uppercase tracking-widest">Verification Status</IrisText>
-                            <View className="flex-row items-center bg-gray-500/10 p-4 rounded-2xl mb-4">
-                                <View className="w-2 h-2 rounded-full bg-green-500 mr-3" />
-                                <IrisText className="text-sm">Phone Number Verified</IrisText>
-                            </View>
-                            <View className="flex-row items-center bg-gray-500/10 p-4 rounded-2xl mb-4">
-                                <View className={`w-2 h-2 rounded-full ${allUploaded ? "bg-green-500" : "bg-yellow-500"} mr-3`} />
-                                <IrisText className="text-sm">Credentials {uploadedDocs.length} of {requiredDocs.length} uploaded</IrisText>
-                            </View>
-                        </View>
-                    )}
-                </View>
-
-                <View className="pb-10">
-                    {detectedRole && (
-                        <View
-                            className="mb-6 p-4 rounded-2xl flex-row items-center justify-center border border-primary/20"
-                            style={{ backgroundColor: colors.primary + "10" }}
-                        >
-                            <Sparkles size={20} color={colors.primary} className="mr-2" />
-                            <IrisText className="font-bold text-primary">
-                                DETECTED ROLE: {detectedRole.toUpperCase()}
-                            </IrisText>
-                        </View>
-                    )}
-                    <IrisButton
-                        variant="primary"
-                        size="lg"
-                        label={allUploaded || detectedRole ? "Complete Setup" : "Continue"}
-                        onPress={allUploaded || detectedRole ? handleContinue : () => openVCSheet(false)}
-                        disabled={uploadedDocs.length === 0 && !detectedRole}
-                    />
                 </View>
             </IrisScreen>
 
@@ -281,103 +243,145 @@ export default function VerificationScreen() {
                         style={{
                             transform: [{ translateY: sheetAnim }],
                             backgroundColor: colors.background,
-                            paddingBottom: 40,
+                            paddingBottom: 24,
                             maxHeight: height * 0.85,
                         }}
-                        className="absolute bottom-0 w-full rounded-t-[40px] px-8 pt-4 border-t border-gray-500/20"
+                        className="absolute bottom-0 w-full rounded-t-2xl px-4 pt-3"
                     >
-                        <View className="w-12 h-1.5 bg-gray-500/30 rounded-full self-center mb-6" />
+                        <View className="w-10 h-1 bg-gray-500/30 rounded-full self-center mb-4" />
 
-                        <View className="flex-row justify-between items-start mb-6">
+                        <View className="flex-row justify-between items-start mb-4">
                             <View className="flex-1">
                                 <IrisText variant="h2">
                                     {showProviders ? "Choose Your Provider" : "Upload Credentials"}
                                 </IrisText>
                                 <IrisText variant="muted">
                                     {showProviders
-                                        ? "Select your electricity provider to get started"
-                                        : "Please provide your Verifiable Credentials (VCs)"}
+                                        ? "Select your electricity provider to obtain new VCs."
+                                        : "Upload a VC from this device and Iris will detect buyer or seller access."}
                                 </IrisText>
                             </View>
                             <TouchableOpacity
                                 onPress={closeVCSheet}
-                                className="w-10 h-10 rounded-full bg-gray-500/10 items-center justify-center -mt-2"
+                                className="w-8 h-8 rounded-full bg-gray-500/10 items-center justify-center"
                             >
-                                <X size={20} color={colors.foreground} />
+                                <X size={16} color={colors.foreground} />
                             </TouchableOpacity>
                         </View>
 
-                        <ScrollView showsVerticalScrollIndicator={false} className="mb-6">
+                        <ScrollView showsVerticalScrollIndicator={false}>
                             {!showProviders ? (
                                 <>
-                                    {/* VC Upload Section */}
-                                    <View className="mb-6">
-                                        {requiredDocs.map((doc, idx) => {
-                                            const isUploaded = uploadedDocs.includes(doc);
-                                            return (
+                                    <OptionButton
+                                        title="Upload from Device"
+                                        subtitle="Use a dummy VC upload and continue to the next step"
+                                        icon={UploadCloud}
+                                        onPress={handleUploadFromDevice}
+                                    />
+
+                                    {uploadState === "loading" && (
+                                        <View
+                                            className="mb-3 p-3 rounded-xl flex-row items-center"
+                                            style={{ backgroundColor: colors.card }}
+                                        >
+                                            <ActivityIndicator size="small" color={colors.primary} />
+                                            <IrisText className="ml-3">Loading dummy VC and verifying access...</IrisText>
+                                        </View>
+                                    )}
+
+                                    {uploadState === "verified" && uploadedVC && (
+                                        <View
+                                            className="mb-3 p-3 rounded-xl flex-row items-center"
+                                            style={{ backgroundColor: colors.primary + "10" }}
+                                        >
+                                            <CheckCircle2 size={22} color={colors.primary} />
+                                            <IrisText className="ml-3 font-semibold" style={{ color: colors.primary }}>
+                                                VC verified. Moving to the next page...
+                                            </IrisText>
+                                        </View>
+                                    )}
+
+                                    {uploadError && (
+                                        <View
+                                            className="mb-3 p-3 rounded-xl"
+                                            style={{ backgroundColor: "#FEE2E2" }}
+                                        >
+                                            <IrisText style={{ color: "#991B1B" }}>{uploadError}</IrisText>
+                                        </View>
+                                    )}
+
+                                    {uploadedVC && (
+                                        <>
+                                            <View className="mb-4">
+                                                <IrisText variant="muted" className="mb-4 text-xs uppercase tracking-widest">Uploaded VC</IrisText>
                                                 <View
-                                                    key={idx}
-                                                    style={{ backgroundColor: isUploaded ? colors.primary + "10" : "transparent" }}
-                                                    className={`flex-row items-center p-5 rounded-3xl border border-dashed mb-4 ${isUploaded ? "border-primary" : "border-gray-500/30"}`}
+                                                    className="flex-row items-center p-4 rounded-xl"
+                                                    style={{ backgroundColor: colors.card }}
                                                 >
-                                                    <View className="w-12 h-12 bg-gray-500/10 rounded-2xl items-center justify-center mr-4">
-                                                        <FileText size={24} color={isUploaded ? colors.primary : colors.muted} />
+                                                    <View className="w-10 h-10 bg-gray-500/10 rounded-lg items-center justify-center mr-3">
+                                                        <FileText size={20} color={colors.primary} />
                                                     </View>
                                                     <View className="flex-1">
-                                                        <IrisText variant="h3" className="mb-0 text-base">{doc}</IrisText>
-                                                        <IrisText variant="muted" className="text-xs">Required for verification</IrisText>
+                                                        <IrisText variant="h3" className="mb-0">{uploadedVC.name}</IrisText>
+                                                        <IrisText variant="muted" className="text-xs">
+                                                            {uploadedVC.matchedDocs.length > 0
+                                                                ? uploadedVC.matchedDocs.join(" • ")
+                                                                : "Credential imported successfully"}
+                                                        </IrisText>
                                                     </View>
-                                                    <TouchableOpacity
-                                                        onPress={() => handleUpload(doc)}
-                                                        disabled={isUploaded}
-                                                        className={`p-3 rounded-2xl ${isUploaded ? "bg-primary" : "bg-gray-500/10"}`}
-                                                    >
-                                                        {isUploaded ? (
-                                                            <CheckCircle2 size={24} color="#FFF" />
-                                                        ) : (
-                                                            <UploadCloud size={24} color={colors.primary} />
-                                                        )}
-                                                    </TouchableOpacity>
+                                                    <CheckCircle2 size={20} color={colors.primary} />
                                                 </View>
-                                            );
-                                        })}
-                                    </View>
+                                            </View>
 
-                                    {/* Don't have VCs Link */}
-                                    <TouchableOpacity onPress={handleDontHaveVC} className="items-center mb-6">
-                                        <IrisText className="text-primary underline text-base">
+                                            <View
+                                                className="mb-3 p-3 rounded-xl flex-row items-center"
+                                                style={{ backgroundColor: colors.primary + "10" }}
+                                            >
+                                                <Sparkles size={20} color={colors.primary} />
+                                                <IrisText className="ml-3 font-bold" style={{ color: colors.primary }}>
+                                                    {getDetectedRoleLabel(uploadedVC.detectedRole)}
+                                                </IrisText>
+                                            </View>
+
+                                            <IrisText variant="muted" className="mb-6 text-sm">
+                                                Iris has loaded this dummy VC successfully. You will be taken to the next step automatically.
+                                            </IrisText>
+                                        </>
+                                    )}
+
+                                    <TouchableOpacity onPress={() => setShowProviders(true)} className="items-center pb-4">
+                                        <IrisText style={{ color: colors.primary, fontSize: 16, textDecorationLine: "underline" }}>
                                             Don't have VCs? Get them from your provider
                                         </IrisText>
                                     </TouchableOpacity>
                                 </>
                             ) : (
                                 <>
-                                    {/* Electricity Providers */}
-                                    <View className="mb-6">
-                                        <IrisText variant="muted" className="mb-4 text-sm">
+                                    <View className="mb-4">
+                                        <IrisText variant="muted" className="mb-3 text-sm">
                                             Select your electricity provider to obtain VCs
                                         </IrisText>
+
                                         {PROVIDERS.map((provider) => (
                                             <TouchableOpacity
                                                 key={provider.id}
                                                 onPress={() => handleProviderSelect(provider)}
                                                 style={{
                                                     backgroundColor: selectedProvider?.id === provider.id ? colors.primary + "10" : colors.card,
-                                                    borderColor: selectedProvider?.id === provider.id ? colors.primary : colors.muted + "20"
                                                 }}
-                                                className="p-5 rounded-3xl border mb-4"
+                                                className="p-4 rounded-xl mb-2"
                                             >
                                                 <View className="flex-row items-center justify-between">
                                                     <View className="flex-1 mr-4">
                                                         <View className="flex-row items-center mb-2">
                                                             <View
-                                                                className="w-10 h-10 rounded-2xl items-center justify-center mr-3"
+                                                                className="w-10 h-10 rounded-xl items-center justify-center mr-3"
                                                                 style={{ backgroundColor: provider.color + "20" }}
                                                             >
                                                                 <Zap size={20} color={provider.color} />
                                                             </View>
                                                             <View className="flex-1">
-                                                                <IrisText variant="h3" className="mb-0 text-base">{provider.name}</IrisText>
+                                                                <IrisText variant="h3" className="mb-0">{provider.name}</IrisText>
                                                                 <IrisText variant="muted" className="text-xs">{provider.region}</IrisText>
                                                             </View>
                                                         </View>
@@ -391,22 +395,14 @@ export default function VerificationScreen() {
                                         ))}
                                     </View>
 
-                                    {/* Back to VCs Link */}
-                                    <TouchableOpacity onPress={() => setShowProviders(false)} className="items-center mb-6">
-                                        <IrisText className="text-primary underline text-base">
-                                            ← Back to upload VCs
+                                    <TouchableOpacity onPress={() => setShowProviders(false)} className="items-center pb-4">
+                                        <IrisText style={{ color: colors.primary, fontSize: 16, textDecorationLine: "underline" }}>
+                                            ← Back to VC upload
                                         </IrisText>
                                     </TouchableOpacity>
                                 </>
                             )}
                         </ScrollView>
-
-                        <IrisButton
-                            variant="primary"
-                            size="lg"
-                            label={allUploaded ? "Complete Verification" : "Continue"}
-                            onPress={handleContinue}
-                        />
                     </Animated.View>
                 </View>
             )}
