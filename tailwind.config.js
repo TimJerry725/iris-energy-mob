@@ -5,8 +5,10 @@ module.exports = {
     theme: {
         extend: {
             fontFamily: {
+                sans: ["IBMPlexSans_400Regular"],
                 regular: ["IBMPlexSans_400Regular"],
                 medium: ["IBMPlexSans_500Medium"],
+                semibold: ["IBMPlexSans_500Medium"],
                 bold: ["IBMPlexSans_700Bold"],
                 black: ["IBMPlexSans_700Bold"],
             },

@@ -152,7 +152,7 @@ const paperFonts = configureFonts({
 
 const LIGHT_THEME: MD3Theme = {
     ...MD3LightTheme,
-    roundness: 16,
+    roundness: 8,
     fonts: paperFonts,
     colors: {
         ...MD3LightTheme.colors,
@@ -201,7 +201,7 @@ const LIGHT_THEME: MD3Theme = {
 
 const DARK_THEME: MD3Theme = {
     ...MD3DarkTheme,
-    roundness: 16,
+    roundness: 8,
     fonts: paperFonts,
     colors: {
         ...MD3DarkTheme.colors,

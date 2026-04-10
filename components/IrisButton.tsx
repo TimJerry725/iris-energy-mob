@@ -66,11 +66,13 @@ export const IrisButton: React.FC<IrisButtonProps> = ({
                     : undefined}
                 buttonColor={buttonColor}
                 textColor={textColor}
-                style={style}
+                style={[
+                    { borderRadius: CONTROL_RADIUS },
+                    style
+                ]}
                 contentStyle={[
                     {
                         minHeight: CONTROL_HEIGHT,
-                        borderRadius: CONTROL_RADIUS,
                     },
                     contentStyle,
                 ]}
@@ -84,7 +86,7 @@ export const IrisButton: React.FC<IrisButtonProps> = ({
                 ]}
                 uppercase={false}
                 theme={{
-                    roundness: CONTROL_RADIUS,
+                    roundness: 2, // Forces paper to use lower baseline roundness scaling if applied
                 }}
                 {...props}
             >

@@ -109,7 +109,7 @@ export default function BuyerFiltersScreen() {
     return (
         <View style={{ flex: 1, backgroundColor: isDark ? "#0B0B0C" : "#FAFBFA" }}>
             <View className="flex-1">
-                <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 40, paddingTop: headerHeight + 8 }}>
+                <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 40, paddingTop: headerHeight + 8 }}>
                     {/* Energy Source */}
                     <View className="mt-0 mb-8">
                         <View className="flex-row items-center justify-between mb-5">
@@ -356,7 +356,7 @@ export default function BuyerFiltersScreen() {
                 </ScrollView>
 
                 {/* Footer Buttons */}
-                <View className="px-5 pt-4 pb-6 border-t flex-row" style={{ borderColor, backgroundColor: colors.background }}>
+                <View className="px-4 pt-4 pb-6 border-t flex-row" style={{ borderColor, backgroundColor: colors.background }}>
                     <TouchableOpacity
                         onPress={handleReset}
                         style={{ flex: 1, height: 48, borderRadius: 8, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: colors.onSurface }}

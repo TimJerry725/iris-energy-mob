@@ -7,6 +7,8 @@ import { IrisText } from "../../components/IrisText";
 import { IrisButton } from "../../components/IrisButton";
 import { IrisTextInput, IrisTextInputAffix } from "../../components/IrisTextInput";
 
+import { IrisLogo } from "../../components/IrisLogo";
+
 export default function PhoneInputScreen() {
     const router = useRouter();
     const { t } = useTranslation();
@@ -19,35 +21,36 @@ export default function PhoneInputScreen() {
     };
 
     return (
-        <IrisScreen scrollable={false} topInset={false}>
+        <IrisScreen scrollable={false} topInset={false} bottomInset={false}>
             <KeyboardAvoidingView
                 behavior={Platform.OS === "ios" ? "padding" : "height"}
-                className="flex-1"
+                style={{ flex: 1 }}
             >
-                <View className="mb-6">
-                    <IrisText variant="h1">{t("phone_title", "What's your number?")}</IrisText>
-                    <IrisText variant="muted">{t("phone_subtitle", "We'll send a verification code to your phone.")}</IrisText>
+                <View style={{ flex: 1, justifyContent: "center", paddingHorizontal: 8, paddingBottom: 80 }}>
+                    <View style={{ alignItems: "center", marginBottom: 40 }}>
+                        <IrisLogo width={240} height={80} />
+                    </View>
+
+                    <IrisTextInput
+                        label={t("phone_label", "Phone number")}
+                        placeholder="00000 00000"
+                        keyboardType="phone-pad"
+                        maxLength={10}
+                        value={phone}
+                        onChangeText={(value) => setPhone(value.replace(/[^0-9]/g, ""))}
+                        autoFocus={false}
+                        left={<IrisTextInputAffix text="🇮🇳 +91" />}
+                        containerStyle={{ marginBottom: 20 }}
+                    />
+
+                    <IrisButton
+                        variant="primary"
+                        size="lg"
+                        label={t("continue", "Continue")}
+                        onPress={handleContinue}
+                        disabled={phone.length !== 10}
+                    />
                 </View>
-
-                <IrisTextInput
-                    label={t("phone_label", "Phone number")}
-                    placeholder="00000 00000"
-                    keyboardType="phone-pad"
-                    maxLength={10}
-                    value={phone}
-                    onChangeText={(value) => setPhone(value.replace(/[^0-9]/g, ""))}
-                    autoFocus
-                    left={<IrisTextInputAffix text="🇮🇳 +91" />}
-                    containerStyle={{ marginBottom: 16 }}
-                />
-
-                <IrisButton
-                    variant="primary"
-                    size="lg"
-                    label={t("continue", "Continue")}
-                    onPress={handleContinue}
-                    disabled={phone.length !== 10}
-                />
             </KeyboardAvoidingView>
         </IrisScreen>
     );

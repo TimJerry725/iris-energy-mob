@@ -2,8 +2,11 @@ import React from "react";
 import { View, ViewProps } from "react-native";
 import { useTheme } from "../context/ThemeContext";
 
+import { CONTROL_RADIUS } from "./controlStyles";
+
 interface IrisCardProps extends ViewProps {
     children: React.ReactNode;
+    className?: string;
 }
 
 export const IrisCard: React.FC<IrisCardProps> = ({ children, className, style, ...props }) => {
@@ -20,10 +23,11 @@ export const IrisCard: React.FC<IrisCardProps> = ({ children, className, style, 
                     shadowRadius: 16,
                     shadowOffset: { width: 0, height: 8 },
                     elevation: 4,
+                    borderRadius: CONTROL_RADIUS,
                 },
                 style,
             ]}
-            className={`rounded-[20px] p-4 border ${className}`}
+            className={`border ${className}`}
             {...props}
         >
             {children}

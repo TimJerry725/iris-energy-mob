@@ -105,7 +105,7 @@ const MarketplaceScreen = () => {
                     <TextInput
                         placeholder="Search for providers, grids, or assets"
                         placeholderTextColor={colors.muted}
-                        style={{ color: colors.foreground, flex: 1, fontSize: 16 }}
+                        style={{ color: colors.foreground, flex: 1, fontSize: 16, fontFamily: "IBMPlexSans_400Regular" }}
                         value={searchQuery}
                         onChangeText={setSearchQuery}
                     />

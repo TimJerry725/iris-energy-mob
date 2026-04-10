@@ -25,38 +25,39 @@ export default function ProfileSetupScreen() {
                 behavior={Platform.OS === "ios" ? "padding" : "height"}
                 className="flex-1"
             >
-                <View className="mb-6">
-                    <IrisText variant="h1">{t("profile_title", "About You")}</IrisText>
-                    <IrisText variant="muted">{t("profile_subtitle", "Tell us a bit about yourself to get started.")}</IrisText>
-                </View>
+                <View style={{ flex: 1, paddingTop: 20 }}>
+                    <View className="mb-8">
+                        <IrisText variant="h1">{t("profile_title", "About You")}</IrisText>
+                        <IrisText variant="muted">{t("profile_subtitle", "Tell us a bit about yourself to get started.")}</IrisText>
+                    </View>
 
-                <View className="flex-1" style={{ gap: 16 }}>
-                    <IrisTextInput
-                        label={t("full_name", "Full Name")}
-                        placeholder="John Doe"
-                        value={name}
-                        onChangeText={setName}
-                        autoFocus
-                    />
+                    <View style={{ gap: 16 }}>
+                        <IrisTextInput
+                            label={t("full_name", "Full Name")}
+                            placeholder="John Doe"
+                            value={name}
+                            onChangeText={setName}
+                            autoFocus
+                        />
 
-                    <IrisTextInput
-                        label={t("email_optional", "Email (Optional)")}
-                        placeholder="john@example.com"
-                        keyboardType="email-address"
-                        autoCapitalize="none"
-                        value={email}
-                        onChangeText={setEmail}
-                    />
-                </View>
+                        <IrisTextInput
+                            label={t("email_optional", "Email (Optional)")}
+                            placeholder="john@example.com"
+                            keyboardType="email-address"
+                            autoCapitalize="none"
+                            value={email}
+                            onChangeText={setEmail}
+                        />
 
-                <View className="pb-4">
-                    <IrisButton
-                        variant="primary"
-                        size="lg"
-                        label={t("continue", "Continue")}
-                        onPress={handleContinue}
-                        disabled={!name.trim()}
-                    />
+                        <IrisButton
+                            variant="primary"
+                            size="lg"
+                            label={t("continue", "Continue")}
+                            onPress={handleContinue}
+                            disabled={!name.trim()}
+                            style={{ marginTop: 8 }}
+                        />
+                    </View>
                 </View>
             </KeyboardAvoidingView>
         </IrisScreen>

@@ -56,7 +56,8 @@ import {
     Bell as LucideBell,
     Droplet as LucideDroplet,
     Footprints as LucideFootprints,
-    Plus as LucidePlus
+    Plus as LucidePlus,
+    Trash as LucideTrash
 } from "lucide-react-native";
 
 export type AppIconName = string;
@@ -133,6 +134,7 @@ export const Bell = createIcon(LucideBell);
 export const Droplet = createIcon(LucideDroplet);
 export const Footprints = createIcon(LucideFootprints);
 export const Plus = createIcon(LucidePlus);
+export const Trash = createIcon(LucideTrash);
 export const Grid2X2 = createIcon(LucidePlus); // Mapping Plus as placeholder for Grid2X2 if not found, or use Lucide's Grid2x2
 const ICON_MAP: Record<string, any> = {
     house: LucideSun, // Home placeholder

@@ -15,7 +15,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { CONTROL_RADIUS } from "../../../components/controlStyles";
 
 const { width } = Dimensions.get("window");
-const CARD_WIDTH = width - 48;
+const CARD_WIDTH = width - 32;
 
 // Extended mock data for energy detail (in real app this comes from backend)
 const ASSET_DETAIL: Record<string, {
@@ -105,7 +105,7 @@ export default function AssetDetailsScreen() {
         <View style={{ flex: 1, backgroundColor: colors.background }}>
             <ScrollView
                 showsVerticalScrollIndicator={false}
-                contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 120, paddingTop: 16 }}
+                contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 120, paddingTop: 16 }}
             >
                 {/* Hero Card */}
                 <IrisCard style={{ marginBottom: 20, padding: 20 }}>
@@ -264,7 +264,7 @@ export default function AssetDetailsScreen() {
                 backgroundColor: colors.surface,
                 borderTopWidth: 1,
                 borderColor: colors.outlineVariant,
-                paddingHorizontal: 20,
+                paddingHorizontal: 16,
                 paddingTop: 14,
                 paddingBottom: Math.max(insets.bottom, 16) + 4,
             }}>

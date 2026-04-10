@@ -29,14 +29,14 @@ export default function AnalyticsScreen() {
 
     const chartHeight = 200;
     const barWidth = 32;
-    const spacing = (SCREEN_WIDTH - 40 - (barWidth * CHART_DATA.length)) / (CHART_DATA.length - 1);
+    const spacing = (SCREEN_WIDTH - 32 - (barWidth * CHART_DATA.length)) / (CHART_DATA.length - 1);
 
     return (
         <IrisScreen scrollable={false} style={{ backgroundColor: "#0B0B0C" }}>
             <View className="flex-1">
                 <ScrollView
                     showsVerticalScrollIndicator={false}
-                    contentContainerStyle={{ paddingBottom: APP_BOTTOM_NAV_CLEARANCE + 40, paddingHorizontal: 20 }}
+                    contentContainerStyle={{ paddingBottom: APP_BOTTOM_NAV_CLEARANCE + 40 }}
                 >
                     {/* Header */}
                     <View className="flex-row items-center justify-between mt-6 mb-8">

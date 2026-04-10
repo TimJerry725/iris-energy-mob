@@ -25,23 +25,15 @@ export default function ProfileScreen() {
         <IrisScreen scrollable={false}>
             <View className="flex-1">
                 <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: APP_BOTTOM_NAV_CLEARANCE }}>
-                    <View className="flex-row items-center justify-between mb-8">
-                        <IrisLogo width={120} height={40} />
-                        <View
-                            className="px-4 py-2 rounded-full"
-                            style={{ backgroundColor: colors.secondary + "14" }}
-                        >
-                            <IrisText style={{ color: colors.secondary, fontSize: 12, fontWeight: "700" }}>
-                                {navRole === "seller" ? "Seller Profile" : "Buyer Profile"}
-                            </IrisText>
+                    <View style={{ paddingTop: 10, paddingBottom: 24 }}>
+                        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+                            <View>
+                                <IrisText style={{ fontSize: 22, fontWeight: "800", color: colors.onSurface }}>My Profile</IrisText>
+                                <IrisText style={{ fontSize: 13, color: colors.onSurfaceVariant, marginTop: 2 }}>
+                                    Manage your account and app preferences.
+                                </IrisText>
+                            </View>
                         </View>
-                    </View>
-
-                    <View className="mb-6">
-                        <IrisText variant="h1">Profile</IrisText>
-                        <IrisText variant="muted">
-                            Manage your account, appearance, and verified access settings.
-                        </IrisText>
                     </View>
 
                     <IrisCard className="p-6 mb-5">

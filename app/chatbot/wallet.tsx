@@ -25,7 +25,7 @@ export default function WalletScreen() {
         <IrisScreen scrollable={false}>
             <View className="flex-1">
                 <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: APP_BOTTOM_NAV_CLEARANCE }}>
-                    <View style={{ paddingHorizontal: 20, paddingTop: 0, paddingBottom: 24 }}>
+                    <View style={{ paddingTop: 10, paddingBottom: 24 }}>
                         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
                             <View>
                                 <IrisText style={{ fontSize: 22, fontWeight: "800", color: colors.onSurface }}>My Wallet</IrisText>
@@ -35,13 +35,6 @@ export default function WalletScreen() {
                                         : "Track your balances and spending."}
                                 </IrisText>
                             </View>
-                            <TouchableOpacity style={{
-                                width: 42, height: 42, borderRadius: 8,
-                                backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.outlineVariant,
-                                alignItems: "center", justifyContent: "center",
-                            }}>
-                                <AppIcon name="bell" size={20} color={colors.onSurface} />
-                            </TouchableOpacity>
                         </View>
                     </View>
 

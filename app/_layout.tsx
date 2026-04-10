@@ -1,3 +1,4 @@
+import 'react-native-gesture-handler';
 import { Stack } from "expo-router";
 import { ActivityIndicator, Platform, View } from "react-native";
 import { PaperProvider } from "react-native-paper";
@@ -7,6 +8,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { useFonts, IBMPlexSans_400Regular, IBMPlexSans_500Medium, IBMPlexSans_700Bold } from '@expo-google-fonts/ibm-plex-sans';
 import "../services/i18n";
 import "../global.css";
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 function AppShell() {
     const { colors, paperTheme } = useTheme();
@@ -61,18 +63,14 @@ function AppShell() {
                         }}
                     />
                     <Stack.Screen name="chatbot/marketplace" />
-                    <Stack.Screen
-                        name="chatbot/seller-dashboard"
-                        options={{ headerShown: true, title: "Seller Dashboard" }}
-                    />
+                    <Stack.Screen name="chatbot/seller-dashboard" options={{ headerShown: false }} />
                     <Stack.Screen
                         name="chatbot/publish-intent"
                         options={{
-                            headerShown: true,
-                            title: "Publish Sale Intent",
-                            headerTransparent: true,
-                            headerShadowVisible: false,
-                            presentation: Platform.OS === "ios" ? "card" : "modal",
+                            headerShown: false,
+                            presentation: "transparentModal",
+                            contentStyle: { backgroundColor: "transparent" },
+                            animation: "slide_from_bottom",
                         }}
                     />
                     <Stack.Screen name="(onboarding)" />
@@ -98,11 +96,13 @@ function RootLayout() {
     }
 
     return (
-        <SafeAreaProvider>
-            <ThemeProvider>
-                <AppShell />
-            </ThemeProvider>
-        </SafeAreaProvider>
+        <GestureHandlerRootView style={{ flex: 1 }}>
+            <SafeAreaProvider>
+                <ThemeProvider>
+                    <AppShell />
+                </ThemeProvider>
+            </SafeAreaProvider>
+        </GestureHandlerRootView>
     );
 }
 

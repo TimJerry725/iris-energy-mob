@@ -45,22 +45,18 @@ export default function BuyerDashboardScreen() {
         <IrisScreen scrollable={false} topInset={true}>
             <View className="flex-1">
                 {/* Header Section */}
-                <View className="px-5 pt-0 pb-2 bg-background">
-                    <View className="flex-row items-center justify-between mb-6">
-                        <View className="flex-row items-center">
-                            <View className="w-10 h-10 rounded-full overflow-hidden bg-primaryContainer items-center justify-center mr-3">
-                                <IrisText style={{ color: colors.primary, fontWeight: '700' }}>SR</IrisText>
-                            </View>
-                            <View>
-                                <IrisText variant="muted" style={{ fontSize: 12 }}>Welcome back,</IrisText>
-                                <IrisText style={{ fontSize: 16, fontWeight: '700', color: colors.onSurface }}>{userName}</IrisText>
-                            </View>
+                <View style={{ paddingTop: 10, paddingBottom: 16 }}>
+                    <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                        <View>
+                            <IrisText style={{ fontSize: 22, fontWeight: "800", color: colors.onSurface }}>Marketplace</IrisText>
+                            <IrisText style={{ fontSize: 13, color: colors.onSurfaceVariant, marginTop: 2 }}>
+                                Find and purchase energy slots.
+                            </IrisText>
                         </View>
-                        <TouchableOpacity className="w-10 h-10 rounded-full items-center justify-center bg-surface border border-outlineVariant">
-                            <Bell size={20} color={colors.onSurface} />
-                        </TouchableOpacity>
                     </View>
+                </View>
 
+                <View>
                     {/* Search & Filter Bar */}
                     <View className="flex-row items-center mb-4">
                         <View
@@ -120,7 +116,7 @@ export default function BuyerDashboardScreen() {
 
                 <ScrollView
                     showsVerticalScrollIndicator={false}
-                    contentContainerStyle={{ paddingBottom: APP_BOTTOM_NAV_CLEARANCE + 20, paddingHorizontal: 20 }}
+                    contentContainerStyle={{ paddingBottom: APP_BOTTOM_NAV_CLEARANCE + 20 }}
                     className="flex-1"
                 >
                     <View className="flex-row items-center justify-between mt-4 mb-4">
@@ -145,17 +141,6 @@ export default function BuyerDashboardScreen() {
                                         {/* Top Row: Icon + Name / Price */}
                                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
                                             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                                <View style={{
-                                                    width: 44,
-                                                    height: 44,
-                                                    borderRadius: 12,
-                                                    backgroundColor: colors.primaryContainer,
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    marginRight: 12,
-                                                }}>
-                                                    {getEnergyIcon(asset.type, 22)}
-                                                </View>
                                                 <View>
                                                     <IrisText style={{ fontSize: 15, fontWeight: '700', color: colors.onSurface }}>{asset.name}</IrisText>
                                                     <IrisText style={{ fontSize: 12, color: colors.onSurfaceVariant, fontWeight: '500', marginTop: 2 }}>
